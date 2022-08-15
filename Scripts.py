@@ -1,6 +1,11 @@
+from PIL.Image import ENCODERS
 from utils.Functions import *
 
 ERRO_PLANTAR_BERRY = "57 - ERRO_PLANTAR_BERRY"
+FILES_FOLDERS = os.path.join(os.path.dirname(__file__), "arquivos")
+HORDA_FILE = "HordaMagikarp.txt"
+FOUND_SHINY_FILE = "FoundShinyMagikarp.txt"
+ENCONTERS_FILE = os.path.join(FILES_FOLDERS, "Encounters.txt")
 
 def BotCapturarMagikarp(dinheiro, jogo="aberto"):
     
@@ -28,40 +33,23 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
     pyautogui.FAILSAFE = True
     
     if jogo == "fechado":
-        p_Teclas = Login("CapturarMagikarp")
-    else:
-        p_Teclas = ObterPosicoesTeclas()
-
-    if p_Teclas == TECLA_NAO_ENCONTRADA:
-        print ("Erro Login")
-        return TECLA_NAO_ENCONTRADA
-   
-    #Posicoes de cada tecla
-    p_Left = p_Teclas[1]          # Recebem (x,y) 
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_B = p_Teclas[7]
-    p_F2 = p_Teclas[9]
-    p_F7 = p_Teclas[12]
-    p_ESC = p_Teclas[15]
+        Login("CapturarMagikarp")
 
     # Verificando a qntd de pokebolas que o personagem tem
     print ("Verificando a quantidade de pokebolas...")
-    totalDePokebolas = ChecandoQntdPokebolas(p_B)
+    totalDePokebolas = ChecandoQntdPokebolas()
     if totalDePokebolas == BOLSA_NAO_ABRIU or totalDePokebolas == ABA_NAO_ABRIU:
         return totalDePokebolas
     
     print ("Quantidade:", totalDePokebolas, "pokebolas")
     
     # Verificando a região atual 
-    regiao = RegiaoAtual(p_F2)
+    regiao = RegiaoAtual()
     
     # Indo para Kanto, se o personagem não estiver.
     if regiao != "Kanto":
         print ("Mudando para Kanto...")
-        erro = TrocarRegiao(p_Teclas, regiaoOrigem=regiao, regiaoDestino="Kanto")
+        erro = TrocarRegiao(regiaoOrigem=regiao, regiaoDestino="Kanto")
         if erro != OK:
             return erro
 
@@ -74,7 +62,7 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
         
         #Usar fly para Vermilion
         print ("Usando fly para Vermilion...")
-        funcionamento = Fly(p_F2, "Kanto", "Vermilion")
+        funcionamento = Fly("Kanto", "Vermilion")
         if funcionamento != OK:
             print ("Erro na funcao Fly")
             return funcionamento
@@ -95,13 +83,13 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
 
             #Andando até o Poke Market
             print ("Andando até o Poke Market...")
-            CaminharAtePokeMarket("Vermilion", p_Left, p_Up, p_Right, p_Down)
+            CaminharAtePokeMarket("Vermilion")
 
             #Entrando e comprando os packs de pokebolas
             print ("Entrando e comprando mais pokebolas...")
             
 
-            funcionamento = Comprar("Pokebola", p_Left, p_Up, p_Right, p_Down, p_Z, p_ESC, qntdPack=pack99, regiao="Kanto")
+            funcionamento = Comprar("Pokebola", qntdPack=pack99, regiao="Kanto")
             if funcionamento != OK:
                 print ("Erro #", funcionamento, " na função \"Comprar\"", sep="")
                 return funcionamento
@@ -114,7 +102,7 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
             
             #Voltando pra posição inicial
             print ("Usando fly para Vermilion...")
-            funcionamento = Fly(p_F2, "Kanto", "Vermilion")
+            funcionamento = Fly("Kanto", "Vermilion")
             if funcionamento != OK:
                 print ("Erro na funcao Fly")
                 return funcionamento
@@ -125,21 +113,21 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
             
             #Entra no Centro Pokemon (CP), recupera vida e sai
             print ("Entrando no pokemon e recuperando vida...")
-            funcionamento = EntrarUsarESairCP(p_Up, p_Z, p_Down)
+            funcionamento = EntrarUsarESairCP()
             if funcionamento != OK:
                 print("Erro na funcao EntrarUsarESairCP")
                 return funcionamento
             
             #Andando ateh o mar
             print ("Andando até o mar...")
-            ClickTecladoVirtual(p_Down, clicks=5, modo="andar")  
+            Teclado(t_Down, clicks=5, modo="andar")  
             
             pp = 30 
             while pp > 0 and totalDePokebolas > 0:    
             ###### ----------- Pescar ----------- ##########
                 
                 print("Pescando...")
-                funcionamento = Pescar(p_F7, p_Z)
+                funcionamento = Pescar()
                 if funcionamento != OK:
                     print("Personagem nao esta na posicao de pesca")
                     return funcionamento
@@ -225,13 +213,13 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
                 if reconhecimento == TENTACOOL_ENCONTRADO:
                     # Apertar Run
                     print ("Fugindo...")
-                    ClickTecladoVirtual(p_Right)
-                    ClickTecladoVirtual(p_Down)
-                    ClickTecladoVirtual(p_Z)
+                    Teclado(t_Right)
+                    Teclado(t_Down)
+                    Teclado(t_Z)
                     time.sleep(2.0)
                 else:
                     # Dar False Swipe ateh a vida ficar minima
-                    pp = FalseSwipe(p_Z, pp)
+                    pp = FalseSwipe(pp)
                     if pp == ERRO_FALSE_SWIPE:
                         print ("Nao foi encontrado o botao Lutar")
                         return ERRO_FALSE_SWIPE
@@ -245,7 +233,7 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
                     while not Capturou:
                         print ("Lancando pokebola...")
                         
-                        acontecimento = LancarPokebola(p_Teclas, totalDePokebolas)
+                        acontecimento = LancarPokebola(totalDePokebolas)
                         
                         if acontecimento == ERRO_LANCAR_POKEBOLA:
                             return ERRO_LANCAR_POKEBOLA
@@ -266,7 +254,7 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
             ################## Guardando ou jogando fora #####################
 
                     
-                    escolha = GuardarOuRelease(situacao, p_ESC, isShiny)
+                    escolha = GuardarOuRelease(situacao, isShiny)
 
                     if escolha == POKEMON_GUARDADO:
                         print ("Pokemon guardado.")
@@ -281,14 +269,11 @@ def BotCapturarMagikarp(dinheiro, jogo="aberto"):
                     #Volta pro "while pp > 0:", reiniciando o processo na parte da pesca 
                     #ateh o PP do false swipe acabar
                         
-            
             #Fim do PP ou acabou as pokebolas
-            
-            
             if pp == 0:
                 #Andando ate o CP
-                ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo") 
-                ClickTecladoVirtual(p_Up, clicks=4) 
+                Teclado(t_Up, clicks=2, modo="andar") 
+                Teclado(t_Up, clicks=4) 
 
     return LIMITE_DINHEIRO_ALCANCADO
 
@@ -296,210 +281,225 @@ def BotCultivarBerry(modo="", berry="CheriBerry", jogo="aberto"):
     '''
     Planta berries em todos os slots do jogo.
 
-    Argumentos: berry -> string -> Berry que deseja plantar
-                jogo -> string -> se o jogo tá aberto ou fechado
-                modo -> string -> indica o modo da função, se é plantar, regar ou colher.
-
-        OBS:
-            Valores válidos para "modo": "plantar", "regar", "colher" e "colherEPlantar"
+    Args: 
+        berry(str):
+            Berry que deseja plantar
+        jogo(str):
+            se o jogo tá aberto ou fechado
+        modo(str):
+            indica o modo da função, se é plantar, regar ou colher.
+            Valores válidos para "modo": "plantar", "regar", 
+            "colher" e "colherEPlantar".
 
     Retornos: Um monte.
     '''
 
     if jogo == "fechado":
-        p_Teclas = Login("CultivarBerry")
-    else:
-        p_Teclas = ObterPosicoesTeclas()
-    
-    if p_Teclas == TECLA_NAO_ENCONTRADA:
-        print ("Erro Login")
-        return TECLA_NAO_ENCONTRADA
-   
-    #Posicoes de cada tecla
-    p_Left = p_Teclas[1]          # Recebem (x,y) 
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_B = p_Teclas[7]
-    p_F1 = p_Teclas[8]
-    p_F2 = p_Teclas[9]
-    p_F5 = p_Teclas[10]
-    p_F6 = p_Teclas[11]
-    p_F7 = p_Teclas[12]
-    p_ESC = p_Teclas[15]
-    p_A = p_Teclas[16]
-
+        Login("CultivarBerry")
     
     # Verificando a região atual 
-    regiao = RegiaoAtual(p_F2)
+    regiao = RegiaoAtual()
     
     # Cultivando em Hoenn
-    erro = CultivarBerriesHoenn(p_Teclas, regiao, modo=modo)
+    erro = CultivarBerriesHoenn(regiao, modo=modo)
     if erro != OK:
         print ("Erro na função \"CultivarBerriesHoenn\".")
         return erro
     
-
     # Mudando para Unova.
-    erro = TrocarRegiao(p_Teclas, regiaoOrigem="Hoenn", regiaoDestino="Unova", repel="Y")
+    erro = TrocarRegiao(regiaoOrigem="Hoenn", regiaoDestino="Unova", repel="Y")
     if erro != OK:
         return erro
       
-    
     # Cultivando em Unova
-    erro = CultivarBerriesUnova(p_Teclas, regiaoOrigem="Unova", modo=modo)    
+    erro = CultivarBerriesUnova(regiaoOrigem="Unova", modo=modo)    
     if erro != OK:
         print ("Erro na função \"CultivarBerriesUnova\".")
         return erro
     
     return OK
 
-def BotMagikarpShiny(jogo="aberto"):
+def BotMagikarpShiny(aberto=True, cadastrar=False):
     '''
     Procura um magikarp shiny em Sootopolis, na horda de magikarp, e o captura. 
-    
-    Argumentos: Nenhum
 
-    Retornos:   OK
-                Muitos outros
+    Returns:   
+        OK
+        Muitos outros
     '''
 
-    if jogo == "fechado":
-        p_Teclas = Login("MagikarpShiny")
-    else:
-        p_Teclas = ObterPosicoesTeclas()
+    if not aberto:
+        erro = Login("MagikarpShiny")
+        if erro != OK:
+            return erro
     
-    if p_Teclas == TECLA_NAO_ENCONTRADA:
-        print ("Erro Login")
-        return TECLA_NAO_ENCONTRADA
-   
-    #Posicoes de cada tecla
-    p_Left = p_Teclas[1]          # Recebem (x,y) 
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_B = p_Teclas[7]
-    p_F1 = p_Teclas[8]
-    p_F2 = p_Teclas[9]
-    p_F5 = p_Teclas[10]
-    p_F6 = p_Teclas[11]
-    p_F7 = p_Teclas[12]
-    p_F8 = p_Teclas[13]
-    p_F9 = p_Teclas[14]
-    p_ESC = p_Teclas[15]
-    p_A = p_Teclas[16]
-
     # Verificando a região atual 
-    regiao = RegiaoAtual(p_F2)
+    regiao = RegiaoAtual()
 
     # Indo para Hoenn, se o personagem não estiver.
     if regiao != "Hoenn":
         print ("Mudando para Hoenn...")
-        erro = TrocarRegiao(p_Teclas, regiaoOrigem=regiao, regiaoDestino="Hoenn")
+        erro = TrocarRegiao(regiaoOrigem=regiao, regiaoDestino="Hoenn")
         if erro != OK:
             return erro
 
     #Usar fly para Sootopolis
     print ("Usando fly para Sootopolis...")
-    funcionamento = Fly(p_F2, "Hoenn", "Sootopolis")
+    funcionamento = Fly("Hoenn", "Sootopolis")
     if funcionamento != OK:
         print ("Erro na funcao Fly")
         return funcionamento
 
+    Teclado(t_X)
+
     #Entra no Centro Pokemon (CP), recupera vida e sai
     print ("Entrando no CP e recuperando vida...")
-    funcionamento = EntrarUsarESairCP(p_Up, p_Z, p_Down, "Hoenn")
+    funcionamento = EntrarUsarESairCP("Hoenn")
     if funcionamento != OK:
         print("Erro na funcao EntrarUsarESairCP")
         return funcionamento
     
     # Verificando a qntd de pokebolas que o personagem tem
     print ("Verificando a quantidade de pokebolas...")
-    totalDePokebolas = ChecandoQntdPokebolas(p_B)
+    totalDePokebolas = ChecandoQntdPokebolas()
     if totalDePokebolas == BOLSA_NAO_ABRIU or totalDePokebolas == ABA_NAO_ABRIU:
         return totalDePokebolas
     elif totalDePokebolas == 0:
         print("Nenhuma pokebola encontrada. É necessário ao menos")
         print("um pack de pokebolas para rodar esse script.")
         return SEM_PACK_POKEBOLAS
-
+    
     # Adquirindo os dados necessários.
-    print (f"Adquirindo dados do arquivo {FILESDIR}HordaMagikarp.txt...")
-    listaPosicoesPokemon = AdquirirDadosHorda(FILESDIR + "HordaMagikarp")
+    print (f"Adquirindo dados do arquivo {FILESDIR}{HORDA_FILE}...")
+    listaPosicoesPokemon = AdquirirDadosHorda(os.path.join(FILESDIR, HORDA_FILE))
     if listaPosicoesPokemon == ERRO_CRIANDO_ARQUIVO or listaPosicoesPokemon == TUPLA_INVALIDA:
         print ("Erro Adquirindo dados de horda de magikarp")
         return listaPosicoesPokemon
 
     print ("Lista de posicoes:", listaPosicoesPokemon)
-    
+    try:
+        with open(ENCONTERS_FILE) as f: 
+            encontros = int(f.read())
+    except:
+        encontros = 0
+
     while True:
-        ClickTecladoVirtual(p_Down, clicks=6)
-        Virar("esquerda", p_Teclas) 
-        ClickTecladoVirtual(p_Left, clicks=2)
+        Teclado(t_Bike)
+        time.sleep(0.5)
+        Teclado(t_Down, clicks=6, modo="bike")
+        Teclado(t_Left, modo="bike", virar=True)
+        Teclado(t_Left, clicks=3, modo="bike")
         
-        erro = UsarSurf(p_Z)
+        erro = UsarSurf()
         if erro != OK:
             print ("Erro usando Surf")
             return erro
         
         for count in range(6):    
             # Usando sweet scent
-            ClickTecladoVirtual(p_F8)
-            
-            if not CheckPixel("balaoChat"):
-                print ("Não foi usado sweet scent.")
-                return ERRO_SWEET_SCENT
+            Teclado(t_SweetScent)
 
+            ######### VERIFICA SE USOU SWEET SCENT ########
+            if not CheckPixel("balaoChat", tentativas=25):
+                
+                # Tenta usar de novo
+                Teclado(t_SweetScent)
+                
+                # Se não aparecer de novo, verifica se não conseguiu escapar 
+                # da batalha anterior
+                if not CheckPixel("balaoChat", tentativas=25):
+                    
+                    # Se não conseguiu, usa "Run" até conseguir.
+                    erro = RunUntilRunHorde()
+                    if erro != USOU_RUN:
+                        return erro
+
+                    # Usando sweet scent
+                    Teclado(t_SweetScent)
+                    if not CheckPixel("balaoChat"):
+                        return ERRO_SWEET_SCENT
+            ###############################################
+            
             time.sleep(5)
             
             # Identificando cada magikarp da horda.
-            reconhecimento = ReconhecerHorda("Magikarp", listaPosicoesPokemon)
+            print("cadastrar =", cadastrar)
+            reconhecimento = ReconhecerHorda("Magikarp", listaPosicoesPokemon, cadastrar)
             
+            # Prosseguindo depois de aparecer o botão de Lutar
+            if not CheckPixel("Lutar"):
+                return ERRO_RUN
+
             if reconhecimento == CADASTROU_NOVA_POSICAO:
                 print("Nova posição cadastrada.")
                 input("Aperte qualquer coisa para continuar...")
-            
+                
+                # Apertando Run.
+                Teclado(t_Right)
+                Teclado(t_Down)
+                Teclado(t_Z)
+
             # Se for um pokemon shiny
             elif type(reconhecimento) == int:
                 print("Pokemon shiny encontrado!")
-                erro = KillNonShinyHorde(p_Teclas, reconhecimento)
+                erro = KillNonShinyHorde(reconhecimento)
                 if erro != OK:
                     return erro
-                erro = FalseSwipeHorde(p_Teclas, reconhecimento, pp=30)                    
+                erro = FalseSwipeHorde(reconhecimento, pp=30)                    
                 if erro != OK:
                     return erro
                 confirmacao = POKEMON_NAO_CAPTURADO
                 while confirmacao == POKEMON_NAO_CAPTURADO:
-                    erro = LancarPokebola(p_Teclas, qntdPokebolas=50)
+                    erro = LancarPokebola(qntdPokebolas=50)
                     if erro != OK:
                         return erro
                     confirmacao = VerificarPokemonCapturado(manter_pokemon=True)
-                ClickTecladoVirtual(p_ESC)
-                RegisterShiny(FILESDIR + "FoundShinyMagikarp.txt")
+                Teclado(t_ESC)
+                RegisterShiny(os.path.join(FILESDIR, FOUND_SHINY_FILE))
 
             else:
                 print("Posicoes ja conhecidas.")
-
+                
                 # Apertando Run.
-                ClickTecladoVirtual(p_Right)
-                ClickTecladoVirtual(p_Down)
-                ClickTecladoVirtual(p_Z)
+                Teclado(t_Right)
+                Teclado(t_Down)
+                Teclado(t_Z)
+            
+            encontros += 1
+            with open(ENCONTERS_FILE, "w") as f: 
+                f.write(str(encontros))
+
+            print("Encontros:", encontros)
             time.sleep(3)
         #End for
 
         # Usando teleport
-        ClickTecladoVirtual(p_F9)
+        Teclado(t_Teleport)
+        
+        # ---------------------------------------------------------------------#
+        # Faz uma última verificação se conseguiu dar run na 
+        # última batalha. (Esse erro não aconteceria para o caso
+        # de captura de shiny, só no caso de "Run")
+
+        ######### VERIFICA SE USOU TELEPORT ########
+        if not CheckPixel("balaoChat"):
+
+            # Verifica se não conseguiu escapar da batalha anterior.
+            # Se não conseguiu, usa "Run" até tentar.
+            erro = RunUntilRunHorde()
+            if erro != USOU_RUN:
+                return erro
+
+            # Usando teleport
+            Teclado(t_Teleport)
+        # ---------------------------------------------------------------------#
         time.sleep(2)
 
         if not CheckPixel("cabeloJoyHoenn", pixel=(986, 349)):
             print ("Personagem não conseguiu utilizar o teleport.")
             return ERRO_TELEPORT
 
-        erro = UsarCPESair(p_Z, p_Down, regiao="Hoenn")
+        erro = UsarCPESair(regiao="Hoenn")
         if erro != OK:
             print ("Erro em UsarCPESair")
             return erro
-    
-BotMagikarpShiny("aberto")

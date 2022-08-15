@@ -10,39 +10,39 @@ def main():
         return TECLA_NAO_ENCONTRADA
 
     #Posicoes de cada tecla
-    p_Left = p_Teclas[1]          # Recebem (x,y) 
+    t_Left = p_Teclas[1]          # Recebem (x,y) 
     p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_B = p_Teclas[7]
+    t_Right = p_Teclas[3]
+    t_Down = p_Teclas[4]
+    t_Z = p_Teclas[5]
+    t_Bolsa = p_Teclas[7]
     p_F1 = p_Teclas[8]
-    p_F2 = p_Teclas[9]
-    p_F5 = p_Teclas[10]
-    p_F6 = p_Teclas[11]
+    t_Fly = p_Teclas[9]
+    t_SuperRepel = p_Teclas[10]
+    t_Repel = p_Teclas[11]
     p_F7 = p_Teclas[12]
-    p_F8 = p_Teclas[13]
+    t_SweetScent = p_Teclas[13]
     p_F9 = p_Teclas[14]
-    p_ESC = p_Teclas[15]
-    p_A = p_Teclas[16]
+    t_ESC = p_Teclas[15]
+    t_Regar = p_Teclas[16]
     
     #Usar fly para Sootopolis
     print ("Usando fly para Sootopolis...")
-    funcionamento = Fly(p_F2, "Hoenn", "Sootopolis")
+    funcionamento = Fly(t_Fly, "Hoenn", "Sootopolis")
     if funcionamento != OK:
         print ("Erro na funcao Fly")
         return funcionamento
 
     #Entra no Centro Pokemon (CP), recupera vida e sai
     print ("Entrando no CP e recuperando vida...")
-    funcionamento = EntrarUsarESairCP(p_Up, p_Z, p_Down, "Hoenn")
+    funcionamento = EntrarUsarESairCP(p_Up, t_Z, t_Down, "Hoenn")
     if funcionamento != OK:
         print("Erro na funcao EntrarUsarESairCP")
         return funcionamento
     
     # Verificando a qntd de pokebolas que o personagem tem
     print ("Verificando a quantidade de pokebolas...")
-    totalDePokebolas = ChecandoQntdPokebolas(p_B)
+    totalDePokebolas = ChecandoQntdPokebolas(t_Bolsa)
     if totalDePokebolas == BOLSA_NAO_ABRIU or totalDePokebolas == ABA_NAO_ABRIU:
         return totalDePokebolas
     elif totalDePokebolas == 0:
@@ -57,18 +57,18 @@ def main():
         print ("Erro Adquirindo dados de horda de magikarp")
         return listaPosicoesPokemon
     
-    ClickTecladoVirtual(p_Down, clicks=6)
+    ClickTecladoVirtual(t_Down, clicks=6)
     Virar("esquerda", p_Teclas) 
-    ClickTecladoVirtual(p_Left, clicks=2)
+    ClickTecladoVirtual(t_Left, clicks=2)
     
-    erro = UsarSurf(p_Z)
+    erro = UsarSurf(t_Z)
     if erro != OK:
         print ("Erro usando Surf")
         return erro
     
     for position in range(6):    
         # Usando sweet scent
-        ClickTecladoVirtual(p_F8)
+        ClickTecladoVirtual(t_SweetScent)
             
         useAgain = True
         while not CheckPixel("balaoChat"):
@@ -77,7 +77,7 @@ def main():
                 return ERRO_SWEET_SCENT
 
             # Tentando mais uma vez
-            ClickTecladoVirtual(p_F8)
+            ClickTecladoVirtual(t_SweetScent)
             useAgain = False
                 
         time.sleep(5)
@@ -99,7 +99,7 @@ def main():
             if erro != OK:
                 return erro
             confirmacao = VerificarPokemonCapturado(manter_pokemon=True)
-        ClickTecladoVirtual(p_ESC)
+        ClickTecladoVirtual(t_ESC)
         RegisterShiny(FILESDIR + "FoundShinyMagikarp.txt")
 
     return OK

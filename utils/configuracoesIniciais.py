@@ -1,14 +1,35 @@
  # Autor: Andre de Farias Pereira
- # Idade: 20 anos
+ # Idade: 20 anos/ 21 anos
  # Descricao: Testando algumas funcionalidades
  
 import pyautogui
 import os
 import time
+import keyboard
 
 POKEMMOFILE = "C:\\\"Arquivos de Programas\"\\PokeMMO\\PokeMMO.exe"
-IMAGESDIR = "C:\\Users\\andre\\OneDrive\\Área de Trabalho\\BotPokeMMO\\imagens\\"
-FILESDIR = "C:\\Users\\andre\\OneDrive\\Área de Trabalho\\BotPokeMMO\\arquivos\\"
+ROOT = "."
+IMAGESDIR = os.path.join(ROOT, "imagens") 
+FILESDIR = os.path.join(ROOT, "arquivos")
+TECLAS = {
+    "Fly": "f1",
+    "Bolsa": "b",
+    "Up": "w",
+    "Left": "a",
+    "Down": "s",
+    "Right": "d",
+    "Z": "z",
+    "X": "x",
+    "Bike": "3",
+    "Regar": "4",
+    "SuperRepel": "5",
+    "Repel": "6",
+    "Pescar": "7",
+    "SweetScent": "8",
+    "Teleport": "9",
+    "Enter": "enter",
+    "ESC": "esc",
+}
 
 # GLOBAL VARIABLES
 default_position_image = 0
@@ -23,6 +44,7 @@ FALTANDO_ARGUMENTOS = "1 - FALTANDO_ARGUMENTOS"
 IMG_NAO_ENCONTRADA = False
 IMG_ENCONTRADA = True
 TECLA_NAO_ENCONTRADA = "2 - TECLA_NAO_ENCONTRADA"
+FUNCIONALIDADE_NAO_CADASTRADA = "6 - FUNCIONALIDADE_NAO_CADASTRADA"
 
 '''
  Verifica se a proxima pagina ja carregou e retorna a posicao da imagem. 
@@ -43,41 +65,16 @@ def PosicaoEDimensaoDaImagem(imagem1=None, imagem2=None, imagem3=None, imagem4=N
                 if imagens[0] == None:
                     return FALTANDO_ARGUMENTOS
     
-    global default_position_image
-    print ("default_position_image =", default_position_image)
-    
-    print("\n", imagens, "\n")
-    
-    if default_position_image == 'first_to_second':
-        # Colocando a primeira posição como segunda.
-        imagens.insert(2, imagens[0])
-        print("\n", imagens, "\n")        
-        del(imagens[0])
-    else:
-        # Colocando a imagem padrao como primeiro
-        imagens.insert(0, imagens[default_position_image])
-        print("\n", imagens, "\n")
-        del(imagens[default_position_image + 1])
-    
-    print("\n", imagens, "\n")
-    
     coordenadaImagem = None 
 
     loop = 0
     while coordenadaImagem == None:
         for imagem in imagens:
-            coordenadaImagem = pyautogui.locateOnScreen(IMAGESDIR + imagem)    
+            image_path = os.path.join(IMAGESDIR, imagem)
+            coordenadaImagem = pyautogui.locateOnScreen(image_path)    
             if coordenadaImagem != None:
-                print ("Imagem \"" + imagem + "\" encontrada")
-                
-                # Se não passou de primeira, então default tem q trocar para o atual.
-                # Se passou de primeira, mas no segundo loop, quer dizer que esse default está bom.
-                index_image = imagens.index(imagem)
-                if index_image != 0:
-                    default_position_image = index_image
-                elif loop == 1:
-                    default_position_image = "first_to_second"
-                print ("\ndefault_position_image =", default_position_image, "\n")
+                print("Imagem \"" + imagem + "\" encontrada")
+                print("Corrdenada:", coordenadaImagem)
                 return coordenadaImagem
 
             print ("Imagem \"" + imagem + "\" NÃO encontrada. tentativa =", loop + 1)
@@ -90,14 +87,19 @@ def ImagemEncontrada(imagem1=None, imagem2=None, imagem3=None, imagem4=None, esp
     '''
     Verifica se a imagem especificada já apareceu na tela.
 
-    Argumentos: imagem -> string -> Nome da imagem.png
-                espera -> float -> tempo de espera para novas tentativas
-                tentativas -> inteiro -> numero de tentativas
+    Args: 
+        imagem(str):
+            Nome da imagem.png
+        espera(float):
+            tempo de espera para novas tentativas
+        tentativas(int):
+            numero de tentativas
 
-    Retornos:   OK
-                IMG_NAO_ENCONTRADA
-                FALTANDO_ARGUMENTOS
-                IMG_ENCONTRADA
+    Returns:   
+        OK
+        IMG_NAO_ENCONTRADA
+        FALTANDO_ARGUMENTOS
+        IMG_ENCONTRADA
     '''
     imagemEncontrada = PosicaoEDimensaoDaImagem(imagem1, imagem2, imagem3, imagem4, espera, tentativas)
 
@@ -117,77 +119,71 @@ def CentroDaImagem(dimensoes=None):
     centro = pyautogui.center(dimensoes)
     return centro
     
-def ObterPosicoesTeclas():
-    posicoesTeclas = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), 
-                (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), 
-                (0, 0), (0, 0),(0, 0), (0, 0)]
+def Teclado(tecla, clicks=1, modo="andar", virar=False, interval=1):
+    '''
+    Tecla de um modo especifico (com intervalo entre tecladas 
+    definido pelo modo). As setas não sao reconhecidas pelo "keyboard".
 
-    imagemTeclas = ("KeyEnter.png", "KeyLeft.png", "KeyUp.png", "KeyRight.png", 
-    "KeyDown.png", "KeyZ.png", "KeyX.png", "KeyB.png","KeyF1.png", "KeyF2.png", 
-    "KeyF5.png", "KeyF6.png", "KeyF7.png", "KeyF8.png", "KeyF9.png", "KeyESC.png", "KeyA.png")
+    Argumentos: 
+        tecla(str):
+            tecla a ser pressionada
+        clicks(int):
+            numero de cliques 
+        modo(str):
+            deve ser uma das adicionadas ("andar", "correr", "bike" 
+            ou "custom")
+
+    Returns:   
+        str: OK
+        str: FUNCIONALIDADE_NAO_CADASTRADA
+    '''
+    if modo == "andar":
+        interval = 0.2
+    elif modo == "correr":
+        interval = 0.15
+    elif modo == "bike":
+        interval = 0.03
+    elif modo == "custom":
+        pass
+    else:
+        return FUNCIONALIDADE_NAO_CADASTRADA
     
-    tamanho = len(posicoesTeclas)
-    for termo in range (tamanho):
-        posicoesTeclas[termo] = CentroDaImagem(PosicaoEDimensaoDaImagem(imagemTeclas[termo]))
-        if posicoesTeclas[termo] == IMG_NAO_ENCONTRADA:
-            return TECLA_NAO_ENCONTRADA
+    if virar:
+        if modo == "andar":
+            interval = 0.05
+        elif modo == "bike":
+            interval = 0.05
+        elif modo != "custom":
+            interval = 0.001     
     
-    return tuple(posicoesTeclas)
+    for count in range(clicks):
+        keyboard.press(tecla)
+        time.sleep(0.05)
+        keyboard.release(tecla)
+        time.sleep(interval)
+
+    return OK
 
 def Login(bot):
     '''
     Abre os programas necessários e realiza o login no PokeMMO.
 
-    Argumentos: bot -> string -> bot que vai ser executado.
+    Args: 
+        bot(str):
+            bot que vai ser executado.
     
-    Retornos: 
-                Lista contendo as posições de cada tecla do teclado
-                TECLA_NAO_ENCONTRADA
-                IMG_NAO_ENCONTRADA
+    Returns: 
+        list: Lista contendo as posições de cada tecla do teclado
+        str: TECLA_NAO_ENCONTRADA
+        str: IMG_NAO_ENCONTRADA
     '''
     pyautogui.FAILSAFE = True
-    position = pyautogui.position()
-    print (position)
     
     # -- Abrindo Pokemmo -- #
     print ("Abrindo PokeMMO...")
     execPoke = f"start {POKEMMOFILE}"
     os.system(execPoke)
     
-    # -- Abrindo o teclado virtual -- #
-    print ("Abrindo Free Virtual Keyboard...")
-    encontrou = False
-    while encontrou == False:
-        pyautogui.click(245, 1056) #Clica na aba de pesquisa do windows
-        time.sleep(0.3)
-        pyautogui.typewrite("FreeV")
-        posicaoIcone = CentroDaImagem(PosicaoEDimensaoDaImagem("TecladoVirtual.png"))
-        if posicaoIcone == IMG_NAO_ENCONTRADA:
-            pyautogui.click(29, 1054)#Clica no botao menu iniciar
-            time.sleep(1.0)
-        else:
-            encontrou = True
-    pyautogui.moveTo(posicaoIcone[0], posicaoIcone[1], duration=0.3) # Posicao do app na janela de pesquisa
-    pyautogui.click() 
-    # -- 
-    if bot == "CapturarMagikarp" or bot == "MagikarpShiny":
-        # Movendo o teclado virtual um pouco mais pra baixo.
-        posicaoTeclado = CentroDaImagem(PosicaoEDimensaoDaImagem("TecladoAberto.png"))
-        posicaoArrastar = (posicaoTeclado[x] + 50, posicaoTeclado[y])
-        pyautogui.moveTo(posicaoArrastar, duration=0.5)
-        pyautogui.drag(0, 50, duration=1.0)
-
-    # -- Mapeando as teclas do teclado virtual --#
-    print("Mapeando as posicoes das teclas do teclado virtual...")
-    posicoesTeclas = ObterPosicoesTeclas()
-    print (posicoesTeclas)
-    if posicoesTeclas == TECLA_NAO_ENCONTRADA:
-        print ("Erro mapeando alguma tecla")
-        return TECLA_NAO_ENCONTRADA
-    
-    #Pegando a posição da tecla Enter
-    p_Enter = posicoesTeclas[0]
-    # --
     # -- Pegando a coordenada do botao Conectar da pagina de login -- #
     print ("Logando...")
     coordenadaConectar = CentroDaImagem(PosicaoEDimensaoDaImagem("BotaoConectar.png", "BotaoConectar2.png", "BotaoConectar3.png"))
@@ -209,7 +205,7 @@ def Login(bot):
         return IMG_NAO_ENCONTRADA
             
     #Clica no enter
-    pyautogui.click(p_Enter[x], p_Enter[y])
+    Teclado(TECLAS["Enter"])
     ##---------------------------------------------    
     
     #### 2 - Selecionar Personagem
@@ -219,6 +215,6 @@ def Login(bot):
         print ("Erro Login: Selecao Personagem")
         return IMG_NAO_ENCONTRADA
 
-    pyautogui.click(p_Enter[x], p_Enter[y])
+    Teclado(TECLAS["Enter"])
     time.sleep(3.0)
-    return posicoesTeclas 
+    return OK

@@ -2,16 +2,35 @@ import datetime
 import sys
 sys.path.append('..')
 from .configuracoesIniciais import *
-
+import keyboard
 
 POSITIONS_HORDE_MOUSE = [(672, 158), (672, 118), (930, 118), (1192, 118), (1192, 155)]
+HORDA_FILE = "HordaMagikarp.txt"
+FOUND_SHINY_FILE = "FoundShinyMagikarp.txt"
+
+#Teclas
+t_Bike = TECLAS["Bike"]
+t_Fly = TECLAS["Fly"]
+t_Bolsa = TECLAS["Bolsa"]
+t_Up = TECLAS["Up"]
+t_Left = TECLAS["Left"]
+t_Down = TECLAS["Down"]
+t_Right = TECLAS["Right"]
+t_Z = TECLAS["Z"]
+t_X = TECLAS["X"]
+t_Regar = TECLAS["Regar"]
+t_ESC = TECLAS["ESC"]
+t_Pescar = TECLAS["Pescar"]
+t_SuperRepel = TECLAS["SuperRepel"]
+t_Repel = TECLAS["Repel"]
+t_SweetScent = TECLAS["SweetScent"]
+t_Teleport = TECLAS["Teleport"]
 
 
 #ERROS:
 CIDADE_NAO_CADASTRADA = "3 - CIDADE_NAO_CADASTRADA"
 CIDADE_NAO_ENCONTRADA = "4 - CIDADE_NAO_ENCONTRADA"
 REGIAO_NAO_CADASTRADA = "5 - REGIAO_NAO_CADASTRADA"
-FUNCIONALIDADE_NAO_CADASTRADA = "6 - FUNCIONALIDADE_NAO_CADASTRADA"
 PIXEL_NAO_CADASTRADO = "7 - PIXEL_NAO_CADASTRADO"
 PIXEL_ENCONTRADO = True
 PIXEL_NAO_ENCONTRADO = False
@@ -79,6 +98,9 @@ ERROR_KILL_POKEMON_HORDE = "67 - ERROR_KILL_POKEMON_HORDE"
 SEM_SHINY = "68 - SEM_SHINY"
 SEM_PACK_POKEBOLAS = "69 - SEM_PACK_POKEBOLAS"
 CAPTURA_CONFIRMADA = "70 - CAPTURA_CONFIRMADA"
+ERRO_RUN = "71 - ERRO_RUN"
+NAO_ESTA_NA_BATALHA = "72 - NAO_ESTA_NA_BATALHA"
+USOU_RUN = "73 - USOU_RUN"
 
 def PosicaoCidadeFly(cidade="", regiao=""):
     '''
@@ -158,33 +180,6 @@ def PosicaoCidadeFly(cidade="", regiao=""):
     posicaoCidade = (posicaoReferencia[0] + posicaoReferenciaParaCidade[0], posicaoReferencia[1] + posicaoReferenciaParaCidade[1])
     return posicaoCidade
 
-def ClickTecladoVirtual(p_tecla, clicks=1, modo="andar"):
-    '''
-    Clica na posicao especificada de um modo especifico (com intervalo entre cliques definidos pelo modo).
-    As setas e algumas teclas do teclado nao sao reconhecidas pela funcao pyautogui.click, e por isso,
-    deve ser usado essa funcao para clicar nelas.
-
-    Argumentos: p_tecla -> tupla com a posicao do pixel
-                clicks -> numero de cliques 
-                modo -> string -> deve ser uma das adicionadas ("andar" ou "instantaneo")
-
-    Retornos:   OK
-                FUNCIONALIDADE_NAO_CADASTRADA
-    '''
-    if modo == "andar":
-        interval = 0.04
-    elif modo == "instantaneo":
-        interval = 0.0    
-    
-    else:
-        return FUNCIONALIDADE_NAO_CADASTRADA
-    
-    for count in range(clicks):
-        pyautogui.mouseDown(p_tecla[x], p_tecla[y])
-        pyautogui.mouseUp(p_tecla[x], p_tecla[y]) 
-        time.sleep(interval)
-
-    return OK
 
 def CheckPixel(name="", pixel=(0,0), espera=0.2, tentativas=50):
     '''
@@ -331,13 +326,18 @@ def CheckPixel(name="", pixel=(0,0), espera=0.2, tentativas=50):
         corPadrao2 = (83, 90, 96)
         corPadrao3 = (83, 90, 95)
         pixel = (988, 757)
-
+    
+    elif name == "fim_conversa_joy":
+        corPadrao1 = (0, 0, 0) 
+        corPadrao2 = (0, 0, 0) 
+        corPadrao3 = (0, 0, 0) 
+        pixel = (1237, 160)
+    
     else:
         return PIXEL_NAO_CADASTRADO   # Nome do Pixel nao definido na funcao CheckPixel
 
     if pixel == (0, 0):
         return FALTANDO_ARGUMENTO_POSICAO_PIXEL
-    
     
     limite = 0
     while limite <= tentativas:
@@ -355,11 +355,11 @@ def CheckPixel(name="", pixel=(0,0), espera=0.2, tentativas=50):
     print ("Pixel \"" + name + "\" NÃO encontrado")
     return PIXEL_NAO_ENCONTRADO
 
-def ChecandoQntdPokebolas(p_B):
+def ChecandoQntdPokebolas():
     '''
     Retorna a quantidade de pokebolas do jogador. Só são considerados packs de 99.
 
-    Argumentos: p_B -> posicão do botão B do teclado virtual
+    Argumentos: t_Bolsa -> posicão do botão B do teclado virtual
 
     Retornos:   BOLSA_NAO_ABRIU
                 ABA_NAO_ABRIU
@@ -367,7 +367,7 @@ def ChecandoQntdPokebolas(p_B):
                 None (nenhuma pokebola)
     '''
     # Abre a bolsa
-    ClickTecladoVirtual(p_B)
+    Teclado(t_Bolsa)
 
     # Procura onde esta a aba da pokebola
     posicaoBagPokebola = CentroDaImagem(PosicaoEDimensaoDaImagem("BagOpcaoPokebola1.png", "BagOpcaoPokebola2.png",\
@@ -378,7 +378,7 @@ def ChecandoQntdPokebolas(p_B):
     
     # Clica na aba
     pyautogui.moveTo(posicaoBagPokebola)
-    ClickTecladoVirtual(pyautogui.position(), modo="instantaneo")
+    pyautogui.click()
     
     # Verifica se a aba abriu
     if not CheckPixel("AbaBagPokebola", pixel=(posicaoBagPokebola[x] - 108, posicaoBagPokebola[y] + 31)):
@@ -389,32 +389,35 @@ def ChecandoQntdPokebolas(p_B):
     
     imagens = ("Bloco99Pokebola1.png", "Bloco99Pokebola2.png", "Bloco99Pokebola3.png")
     for imagem in imagens:
-        lista99Pokebolas = list(pyautogui.locateAllOnScreen(IMAGESDIR + imagem))
+        lista99Pokebolas = list(pyautogui.locateAllOnScreen(
+            os.path.join(IMAGESDIR, "Bloco99Pokebola1.png")
+        ))
+        
         qntdPackPokebola = len(lista99Pokebolas)
         
         if qntdPackPokebola > 0:
             print ("Lista =", lista99Pokebolas)
             pokebolas = 99*qntdPackPokebola
             # Fecha a bolsa
-            ClickTecladoVirtual(p_B)
+            Teclado(t_Bolsa)
             return pokebolas
     
     pokebolas = 0
     # Fecha a bolsa
-    ClickTecladoVirtual(p_B)        
+    Teclado(t_Bolsa)        
     return pokebolas
 
-def RegiaoAtual(p_F2):
+def RegiaoAtual():
     '''
     Retorna a região atual do personagem.
 
-    Argumentos: p_F2 -> Tupla -> posição do botão F2 no teclado virtual
+    Argumentos: t_Fly -> Tupla -> posição do botão F2 no teclado virtual
 
     Retornos:   Regiao (string)
                 REGIAO_NAO_CADASTRADA
     '''
     
-    ClickTecladoVirtual(p_F2)
+    Teclado(t_Fly)
 
     if ImagemEncontrada("RegiaoKanto1.png", "RegiaoKanto2.png", "RegiaoKanto3.png", tentativas=2):
         regiao = "Kanto"
@@ -428,30 +431,32 @@ def RegiaoAtual(p_F2):
     else:
         return REGIAO_NAO_CADASTRADA
 
-    time.sleep(0.3)
+    time.sleep(0.5)
     return regiao
 
-def Fly(p_F2, regiao="", cidade=""):
+def Fly(regiao="", cidade=""):
     '''
     Realiza o Fly para uma determinada cidade.
 
-    Argumentos: p_F2 -> tupla -> posicão em pixel do botão F2 do teclado virtual
-                regiao -> string -> regiao da cidade
-                cidade -> string -> cidade desejada
+    Args: 
+        regiao(str):
+            regiao da cidade
+        cidade(str):
+            cidade desejada
 
-    Retornos:   CIDADE_NAO_ENCONTRADA
-                CIDADE_NAO_CADASTRADA
-                REGIAO_NAO_CADASTRADA
-                OK
+    Returns:   
+        CIDADE_NAO_ENCONTRADA
+        CIDADE_NAO_CADASTRADA
+        REGIAO_NAO_CADASTRADA
+        OK
     '''
-
     if cidade == "":
         print ("Faltando o argumento \"cidade\" na função \"Fly\".")
         return FALTANDO_ARGUMENTOS
 
     # Se o mapa já não tiver aberto, abre ele.
     if not ImagemEncontrada("TownMap1.png", "TownMap2.png", "TownMap3.png", tentativas=1):
-        ClickTecladoVirtual(p_F2)
+        Teclado(t_Fly)
     
     posicaoCidade = PosicaoCidadeFly(cidade, regiao)
     if posicaoCidade == CIDADE_NAO_ENCONTRADA or posicaoCidade == CIDADE_NAO_CADASTRADA: #Nao foi encontrado o BotaoMapa
@@ -461,39 +466,36 @@ def Fly(p_F2, regiao="", cidade=""):
     
     if regiao == "Unova":
         # Clica mais uma vez.
-        ClickTecladoVirtual(pyautogui.position())
-    
-    ClickTecladoVirtual(pyautogui.position())
+        pyautogui.click()
+
+    pyautogui.click()
     time.sleep(10.0)
     
     return OK
 
-def EstenderRepel(p_Teclas, escolha=""):
+def EstenderRepel(escolha=""):
     '''
     Estende o uso do repel, ou não.
+        
+    Args: 
+        escolha(str):
+            "Y" ou "N" 
 
-    Argumentos: p_Teclas -> tupla -> posições de cada tecla do teclado virtual
-                escolha -> string -> "Y" ou "N" 
-
-    Retornos:
-                OK
-                ERRO_REPEL
-                ESCOLHA_INVALIDA
+    Returns:
+        OK
+        ERRO_REPEL
+        ESCOLHA_INVALIDA
     '''
-    
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    
     if not CheckPixel("Sim"):
         print ("O repel não terminou nesse momento, como deveria.")
         return ERRO_REPEL
 
     if escolha == "Y":
-        ClickTecladoVirtual(p_Z)
+        Teclado(t_Z)
         
     elif escolha == "N":
-        ClickTecladoVirtual(p_Down)
-        ClickTecladoVirtual(p_Z)
+        Teclado(t_Down)
+        Teclado(t_Z)
     else:
         return ESCOLHA_INVALIDA
 
@@ -501,34 +503,28 @@ def EstenderRepel(p_Teclas, escolha=""):
 
     return OK
 
-def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
+def TrocarRegiao(regiaoOrigem="", regiaoDestino="", repel="N"):
     '''
     Troca de região para a região de destino.
 
 
-    Argumentos: regiaoOrigem -> string -> regiao que o personagem está no momento
-                regiaoDestino -> string -> regiao de destino
-                p_Tecla -> tupla -> posicao de todas as teclas do teclado virtual
-                repel -> string -> indica se o personagem está usando repel ou não.
+    Argumentos: 
+        regiaOrigem(str): 
+            regiao que o personagem está no momento
+        regiaoDestino(str): 
+        repel(str):
+            indica se o personagem está usando repel ou não.
+            Valores válidos para "repel": "Y" para "Sim", 
+            qualquer outra coisa para "Não".
 
-        OBS:
-            Valores válidos para "repel": "Y" para "Sim", qualquer outra coisa para "Não".
-
-    Retornos:   OK
-                MESMA_REGIAO
-                REGIAO_DESTINO_INVALIDA
-                ERRO_TROCAR_REGIAO
-                REGIAO_ORIGEM_INVALIDA
-                ERRO_REPEL
+    Retornos:   
+        OK
+        MESMA_REGIAO
+        REGIAO_DESTINO_INVALIDA
+        ERRO_TROCAR_REGIAO
+        REGIAO_ORIGEM_INVALIDA
+        ERRO_REPEL
     '''
-
-    p_Left = p_Teclas[1]          
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_F2 = p_Teclas[9]
-
 
     if regiaoOrigem == regiaoDestino:
         return MESMA_REGIAO
@@ -537,30 +533,30 @@ def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
     if regiaoOrigem == "Kanto":
         
         # Voando para Vermilion.
-        erro = Fly(p_F2, regiao="Kanto", cidade="Vermilion")
+        erro = Fly(regiao="Kanto", cidade="Vermilion")
         if erro != OK:
             return erro
 
         # Caminhando até o porto.
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=14)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=6)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=3)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=4)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=8)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=9)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=2)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=14)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=6)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=3)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=4)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=8)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=9)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=2)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
 
         # Conversando com o cara do porto.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
             
@@ -568,22 +564,22 @@ def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
             return ERRO_TROCAR_REGIAO
         
         if regiaoDestino == "Hoenn":
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
         
         elif regiaoDestino == "Sinnoh":
-            ClickTecladoVirtual(p_Down)
+            Teclado(t_Down)
             time.sleep(0.2)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
 
         elif regiaoDestino == "Unova":
-            ClickTecladoVirtual(p_Down, clicks=2)
+            Teclado(t_Down, clicks=2)
             time.sleep(0.2)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
         else:
             return REGIAO_DESTINO_INVALIDA
 
         # Termina a conversa.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
 
@@ -591,48 +587,48 @@ def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
     elif regiaoOrigem == "Hoenn":
         
         # Voando para Slateport.
-        erro = Fly(p_F2, regiao="Hoenn", cidade="Slateport")
+        erro = Fly(regiao="Hoenn", cidade="Slateport")
         if erro != OK:
             return erro
 
         # Caminhando até o porto.
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=7)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=4)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=7)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=4)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right)
 
         if repel == "Y":
             # Verifica se o repel acabou e veio a pergunta de se quer estender com mais um.
-            erro = EstenderRepel(p_Teclas, escolha="N")
+            erro = EstenderRepel(escolha="N")
             if erro != OK:
                 print ("Erro Função EstenderRepel.")
                 return erro
 
-        ClickTecladoVirtual(p_Right, clicks=15)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up)
+        Teclado(t_Right, clicks=15)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up)
         
         # Entra no Porto.
-        ClickTecladoVirtual(p_Up)
+        Teclado(t_Up)
         
         # Verifica se entrou.
         if not CheckPixel("portoHoenn"):
             return ERRO_TROCAR_REGIAO
         
         # Anda até a mulher.
-        ClickTecladoVirtual(p_Up, clicks=3)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=4)
-        ClickTecladoVirtual(p_Up)
+        Teclado(t_Up, clicks=3)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=4)
+        Teclado(t_Up)
         time.sleep(0.1)
 
         # Inicia a conversa.
-        ClickTecladoVirtual(p_Z)
+        Teclado(t_Z)
         
         # Conversando com a mulher do porto.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
         
@@ -640,22 +636,22 @@ def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
             return ERRO_TROCAR_REGIAO
         
         if regiaoDestino == "Kanto":
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
         
         elif regiaoDestino == "Sinnoh":
-            ClickTecladoVirtual(p_Down)
+            Teclado(t_Down)
             time.sleep(0.2)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
 
         elif regiaoDestino == "Unova":
-            ClickTecladoVirtual(p_Down, clicks=2)
+            Teclado(t_Down, clicks=2)
             time.sleep(0.2)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
         else:
             return REGIAO_DESTINO_INVALIDA
 
         # Termina a conversa.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
 
@@ -663,27 +659,27 @@ def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
     #### UNOVA -> REGIÃO DESTINO ####
     elif regiaoOrigem == "Unova":
         # Voando para Castelia.
-        erro = Fly(p_F2, regiao="Unova", cidade="Castelia")
+        erro = Fly(regiao="Unova", cidade="Castelia")
         if erro != OK:
             return erro
-        ClickTecladoVirtual(p_Down)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=44)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=6)
+        Teclado(t_Down)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=44)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=6)
         time.sleep(7)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=3)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=5)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=3)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=5)
+        Teclado(t_Left, clicks=2, modo="andar")
         time.sleep(0.1)
         
         # Inicia a conversa.
-        ClickTecladoVirtual(p_Z)
+        Teclado(t_Z)
 
         # Conversando com a mulher do porto.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
             
@@ -691,23 +687,23 @@ def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
             return ERRO_TROCAR_REGIAO
         
         if regiaoDestino == "Kanto":
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
         
         elif regiaoDestino == "Hoenn":
-            ClickTecladoVirtual(p_Down)
+            Teclado(t_Down)
             time.sleep(0.2)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
         
         elif regiaoDestino == "Sinnoh":
-            ClickTecladoVirtual(p_Down, clicks=2)
+            Teclado(t_Down, clicks=2)
             time.sleep(0.2)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
 
         else:
             return REGIAO_DESTINO_INVALIDA
 
         # Termina a conversa.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
             
@@ -719,17 +715,19 @@ def TrocarRegiao(p_Teclas, regiaoOrigem="", regiaoDestino="", repel="N"):
 
     return OK
         
-def ContinuarConversa(p_Z, clicks=1):
+def ContinuarConversa(clicks=1):
     '''
     Continua a conversa apertando Z. Essa função NECESSITA de que o fim da mensagem
     seja demarcado por um símbolo de seta para baixo. Se não tiver a seta na mensagem
     essa função NÃO VAI FUNCIONAR.
     
-    Argumentos: p_Z -> tupla -> posição do botão Z do teclado virtual
-                clicks -> inteiro positivo -> número de cliques em sequência
+    Args: 
+        clicks(int):
+            número de cliques.
     
-    Retornos:   OK
-                SETA_NAO_ENCONTRADA
+    Returns:   
+        OK
+        SETA_NAO_ENCONTRADA
     '''
     
     while clicks > 0:
@@ -740,25 +738,25 @@ def ContinuarConversa(p_Z, clicks=1):
 
         time.sleep(0.1)
 
-        ClickTecladoVirtual(p_Z, modo="instantaneo")
+        Teclado(t_Z, modo="andar")
         clicks -=1
     
     return OK
 
-def EntrarCP(p_Up, regiao="Kanto"):
+def EntrarCP(regiao="Kanto"):
     '''
     Entra no centro pokemon e se posiciona em frente a enfermeira Joy.
 
-    Argumentos: p_Up -> tupla -> posicao em pixel da seta para cima
-                p_Z -> tupla -> posicao em pixel do botao Z
-                regiao -> string -> região do CP
+    Argumentos:
+        regiao -> string -> região do CP
 
-    Retornos:   OK
-                NAO_ENTROU_NO_CP
-                PIXEL_NAO_CADASTRADO
-                
+    Retornos:   
+        OK
+        NAO_ENTROU_NO_CP
+        PIXEL_NAO_CADASTRADO        
     '''
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo") #Entrando no CP 
+    Teclado(t_Up, modo="correr", virar=True)
+    Teclado(t_Up, modo="correr") #Entrando no CP 
     
     if regiao == "Kanto":
         pixelReferencia = "cabeloJoyKanto"
@@ -776,36 +774,35 @@ def EntrarCP(p_Up, regiao="Kanto"):
     time.sleep(0.2)
     
     # Andando em direção a ela
-    ClickTecladoVirtual(p_Up, clicks=4, modo="andar") #Andando ateh a Joy 
+    Teclado(t_Up, clicks=4, modo="correr") #Andando ateh a Joy 
     time.sleep(0.2)
     
     return OK
 
-def UsarCPESair(p_Z, p_Down, regiao="Kanto"):
+def UsarCPESair(regiao="Kanto"):
     '''
     Entra no centro pokemon e se posiciona em frente a enfermeira Joy.
 
-    Argumentos: 
-                p_Z -> tupla -> posicao em pixel do botao Z
-                p_Down -> tupla -> posicao em pixel da seta para baixo
-                regiao -> string -> região do CP
+    Args: 
+        regiao(str):
+            região do CP
 
-    Retornos:   OK
-                PIXEL_NAO_CADASTRADO
-                ERRO_CP
+    Returns:   
+        OK
+        PIXEL_NAO_CADASTRADO
+        ERRO_CP
     '''
-    
     # Iniciando a conversa.
-    ClickTecladoVirtual(p_Z) 
+    Teclado(t_Z) 
     
     # Continuando a conversa.
-    erro = ContinuarConversa(p_Z)
+    erro = ContinuarConversa()
     if erro != OK:
         return erro
 
     if regiao == "Hoenn":
         # Continuando a conversa.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
 
@@ -814,16 +811,22 @@ def UsarCPESair(p_Z, p_Down, regiao="Kanto"):
         print ("Não encontrou o botão \"Sim\" para recuperar vida.")
         return ERRO_CP
 
-    ClickTecladoVirtual(p_Z, modo="instantaneo") 
+    Teclado(t_Z) 
 
     # Terminando a conversa.
-    erro = ContinuarConversa(p_Z, clicks=4)
+    erro = ContinuarConversa(clicks=4)
     if erro != OK:
         return erro
 
+    if not CheckPixel("fim_conversa_joy"):
+        print ("Não encerrou a conversa como deveria.")
+        return ERRO_CP
+    
+    time.sleep(0.5)
+
     # Andando até a porta do CP
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")  
-    ClickTecladoVirtual(p_Down, clicks=3, modo="andar") 
+    Teclado(t_Down, virar=True, modo="correr")  
+    Teclado(t_Down, clicks=4, modo="correr")  
     
     # Verificando regiao e se está tudo OK
     if regiao == "Kanto":
@@ -835,69 +838,76 @@ def UsarCPESair(p_Z, p_Down, regiao="Kanto"):
     else:
         return PIXEL_NAO_CADASTRADO
 
-    if not CheckPixel(pixelReferencia):
-        print ("Personagem entrou no CP mas agora nao estah na posicao de saida como deveria")
-        return ERRO_CP
+    # Verificando se chegou na porta do CP, e andando para baixo
+    # caso não tenha chegado
+    tentativas = 1
+    while not CheckPixel(pixelReferencia):
+        print("Não está na porta do CP.")
+        tentativas += 1
+        if tentativas > 6:
+            print ("Personagem entrou no CP mas agora nao estah na posicao de saida como deveria")
+            return ERRO_CP
+        print("Andando uma casa para baixo")
+        Teclado(t_Down, modo="correr")  
 
     #Sai do CP    
-    ClickTecladoVirtual(p_Down, clicks=1, modo="andar")  
+    Teclado(t_Down, clicks=1, modo="correr")  
     time.sleep(2.0)
-
     return OK
 
-def EntrarUsarESairCP(p_Up, p_Z, p_Down, regiao="Kanto"):
+def EntrarUsarESairCP(regiao="Kanto"):
     '''
     Entra, recupera vida no centro pokemon e sai.
 
-    Argumentos: p_Up -> tupla -> posicao em pixel da seta para cima
-                p_Z -> tupla -> posicao em pixel do botao Z
-                p_Down -> tupla -> posicao em pixel da seta para baixo
-                regiao -> string -> região do CP
+    Argumentos: 
+        regiao(str):
+            região do CP.
 
-    Retornos:   OK
-                NAO_ENTROU_NO_CP
-                ERRO_CP
-                SETA_NAO_ENCONTRADA
-                PIXEL_NAO_CADASTRADO           
+    Returns:   
+        OK
+        NAO_ENTROU_NO_CP
+        ERRO_CP
+        SETA_NAO_ENCONTRADA
+        PIXEL_NAO_CADASTRADO           
     '''
-    
-    erro = EntrarCP(p_Up, regiao)
+    erro = EntrarCP(regiao)
     if erro != OK:
         print ("Erro entrando no CP.")
         return erro
     
-    erro = UsarCPESair(p_Z, p_Down, regiao)
+    erro = UsarCPESair(regiao)
     if erro != OK:
         print ("Erro usando o CP.")
         return erro
     
     return OK
 
-def CaminharAtePokeMarket(cidade, p_Left, p_Up, p_Right, p_Down):
+def CaminharAtePokeMarket(cidade):
     '''
     Caminha até o Poke Market. 
     Jogador precisa estar na porta do CP do lado de fora, e virado pra fora.
 
-    Argumentos: cidade -> string -> cidade que o personagem se encontra
-                p_Tecla -> tupla -> Posicao da tecla especificada do teclado virtual
+    Args: 
+        cidade(str):
+            cidade que o personagem se encontra
 
-    Retornos:   CIDADE_NAO_CADASTRADA
-                OK
+    Returns:   
+        CIDADE_NAO_CADASTRADA
+        OK
     '''
-
     if cidade == "Vermilion":
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=14)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=6)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=3)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=2)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=14)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=6)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=3)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=2)
         # Entra no Poke-Market.
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
+        Teclado(t_Up, clicks=2, modo="andar")
 
     else:
         print ("Erro função CaminharProMarket: Cidade não cadastrada")
@@ -905,7 +915,7 @@ def CaminharAtePokeMarket(cidade, p_Left, p_Up, p_Right, p_Down):
 
     return OK
 
-def Comprar(item, p_Left, p_Up, p_Right, p_Down, p_Z, p_ESC, qntdPack=1, regiao="Kanto"):
+def Comprar(item, qntdPack=1, regiao="Kanto"):
     '''
     Entra no poke market e compra o item de acordo com a quantidade de packs desejada.
 
@@ -921,7 +931,6 @@ def Comprar(item, p_Left, p_Up, p_Right, p_Down, p_Z, p_ESC, qntdPack=1, regiao=
                 REGIAO_NAO_CADASTRADA
                 ITEM_NAO_CADASTRADO
     '''
-    
     if qntdPack <= 0:
         print ("Qntd de pack deve ser > 0")
         return QNTD_PACK_INVALIDA
@@ -935,15 +944,15 @@ def Comprar(item, p_Left, p_Up, p_Right, p_Down, p_Z, p_ESC, qntdPack=1, regiao=
         # Dentro do mercado
 
         # Andando até o vendedor
-        ClickTecladoVirtual(p_Up, clicks=4)
-        ClickTecladoVirtual(p_Left)
+        Teclado(t_Up, clicks=4)
+        Teclado(t_Left)
         time.sleep(0.2)
         
         # Iniciando a conversa com ele.
-        ClickTecladoVirtual(p_Z, modo="instantaneo")
+        Teclado(t_Z, modo="andar")
         
         # Continua até aparecer os itens.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
 
@@ -959,7 +968,7 @@ def Comprar(item, p_Left, p_Up, p_Right, p_Down, p_Z, p_ESC, qntdPack=1, regiao=
             return ERRO_COMPRAR 
         
         pyautogui.moveTo(posicaoQuantiaMax)
-        ClickTecladoVirtual(posicaoQuantiaMax, modo="instantaneo")
+        pyautogui.click()
 
         #Apertando pra comprar
         posicaoComprar = CentroDaImagem(PosicaoEDimensaoDaImagem("Comprar1.png", "Comprar2.png", "Comprar3.png", 
@@ -973,34 +982,34 @@ def Comprar(item, p_Left, p_Up, p_Right, p_Down, p_Z, p_ESC, qntdPack=1, regiao=
         #Compra a qntd packs
         for count in range (qntdPack):
             #Clica em comprar
-            ClickTecladoVirtual(posicaoComprar, modo="instantaneo")
+            pyautogui.click()
             time.sleep(2.0)
             
             #Clica em Quantidade Max
             pyautogui.moveTo(posicaoQuantiaMax)
-            ClickTecladoVirtual(posicaoQuantiaMax, modo="instantaneo")
+            pyautogui.click()
             time.sleep(2.0)
 
             #Move pro botão comprar
             pyautogui.moveTo(posicaoComprar)
 
         # Termina a compra
-        ClickTecladoVirtual(p_ESC)
+        Teclado(t_ESC)
         time.sleep(0.2)
         
         # Termina a conversa.
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             return erro
 
         #Anda até a porta
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
         if not CheckPixel("cabeloMercador"):
             return ERRO_COMPRAR
 
         # Sai do mercado
-        ClickTecladoVirtual(p_Down)
+        Teclado(t_Down)
         time.sleep(2.5)
 
     #end if regiao == "Kanto":
@@ -1013,20 +1022,22 @@ def ReconhecerPokemon(pokemon):
     '''
     Começado a batalha, verifica qual é o pokemon encontrado
 
-    Argumentos: pokemon -> string -> deve ser um dos cadastrados
+    Args: 
+        pokemon(str):
+            deve ser um dos cadastrados
     
-    Retornos:   NOME_NAO_APARECEU
-                ERRO_RECONHECER_POKE
-                MAGIKARP_NAO_ENCONTRADO
-                MAGIKARP_ENCONTRADO
-                MAGIKARP_SHINY
-                TENTACOOL_NAO_ENCONTRADO
-                TENTACOOL_ENCONTRADO
-                TENTACOOL_SHINY
-                POKEMON_NAO_REGISTRADO
+    Returns:   
+        NOME_NAO_APARECEU
+        ERRO_RECONHECER_POKE
+        MAGIKARP_NAO_ENCONTRADO
+        MAGIKARP_ENCONTRADO
+        MAGIKARP_SHINY
+        TENTACOOL_NAO_ENCONTRADO
+        TENTACOOL_ENCONTRADO
+        TENTACOOL_SHINY
+        POKEMON_NAO_REGISTRADO
 
     '''
-    
     # Verifica se o nome do pokemon já apareceu 
     if not CheckPixel("NomeDoPokemon"):
         print ("Nao apareceu o nome do pokemon. Provavelmente estah numa acao diferente")
@@ -1101,12 +1112,9 @@ def ReconhecerPokemon(pokemon):
         print("Pokemon ainda nao implementado")
         return POKEMON_NAO_REGISTRADO
 
-def Pescar(p_F7, p_Z): 
+def Pescar(): 
     '''
     Executa a função de pescar até achar algum pokemon, ou acontecer algum erro.
-
-    Argumentos: p_F7 -> tupla -> posição do botão F7
-                p_Z -> tupla -> posição do botão Z
 
     Retornos:   ERRO_PESCAR
                 OK
@@ -1120,7 +1128,7 @@ def Pescar(p_F7, p_Z):
             '''
             Repete o while seguinte para tentar novamente ao apertar pescar de novo
             '''
-            pyautogui.click(p_F7[0], p_F7[1]) # Aperta para pescar
+            Teclado(t_Pescar) # Aperta para pescar
             time.sleep(3.6)
             limite = 0
             while encontrouPokemon == False and naoEncontrouPokemon == False and limite != 3:
@@ -1133,13 +1141,13 @@ def Pescar(p_F7, p_Z):
              
                 encontrouPokemon = CheckPixel("Landed a pokemon!")
                 if encontrouPokemon:
-                    ClickTecladoVirtual(p_Z) #Fecha a mensagem "Landed a Pokemon!" 
+                    Teclado(t_Z) #Fecha a mensagem "Landed a Pokemon!" 
                     repetir = False # Encontrou algum pokemon. Sai da função.
                     
                 else:
                     naoEncontrouPokemon = CheckPixel("Not even a nibble...")
                     if naoEncontrouPokemon:    
-                        ClickTecladoVirtual(p_Z) #Fecha a mensagem "Not even a nibble..." 
+                        Teclado(t_Z) #Fecha a mensagem "Not even a nibble..." 
                         # Volta ao primeiro while e repete a acao de pescar ateh vir a mensagem "Landed a Pokemon!"                   
                     else:
                         #Significa que nenhuma mensagem apareceu. Vai verificar de novo.
@@ -1157,16 +1165,18 @@ def Pescar(p_F7, p_Z):
     time.sleep(5.0)
     return OK
 
-def FalseSwipe(p_Z, pp):
+def FalseSwipe(pp):
     '''
     Usa o ataque False swipe até a vida do pokemon ficar mínima
 
-    Argumentos: p_Z -> tupla -> posicao em pixel da tecla Z  
-                pp -> inteiro positivo -> quantidade atual de PP
+    Args: 
+        pp(int):
+            quantidade atual de PP
     
-    Retornos:   VALOR_INVALIDO_PP
-                ERRO_FALSE_SWIPE
-                qntd de pp
+    Returns:
+        VALOR_INVALIDO_PP
+        ERRO_FALSE_SWIPE
+        qntd de pp
 
     '''
     if pp < 0:
@@ -1179,7 +1189,7 @@ def FalseSwipe(p_Z, pp):
             return ERRO_FALSE_SWIPE # -2
         
         # Manda o False swipe 
-        ClickTecladoVirtual(p_Z, clicks=2)
+        Teclado(t_Z, clicks=2)
         time.sleep(3.2)
         pouca = CheckPixel("Vida")
         pp -= 1
@@ -1188,34 +1198,67 @@ def FalseSwipe(p_Z, pp):
     # e a main fazer algo especifico em relacao a isso.
     return pp      
 
-def LancarPokebola(p_Teclas, qntdPokebolas):
+def EncontrarAbaPokebola(bola="Pokebola"):
+    count = 0
+    # Se não chegou na aba de pokebolas, da mochila,
+    # vai pra direita até encontrar
+    while not CheckPixel(bola) and count < 4:
+        Teclado(t_Right)
+        count += 1
+    
+    if count < 4: return OK
+
+    # cont == 4 quer dizer que foi até o final e +1 e não encontrou.
+    # Começa a ir pra esquerda pra ver se encontra.
+    while not CheckPixel(bola) and count > 0:
+        Teclado(t_Left)
+        count -= 1
+
+    if count > 0: return OK
+
+    # cont == 0 quer dizer que foi até o final e -1 e não encontrou.
+    return ERRO_FIND_POKEBOLA_TAB
+
+
+def LancarPokebola(qntdPokebolas):
     '''
     Lança pokebola, ou lança a bola que tiver (sem ser master ball) se as pokebolas
     acabaram durante a batalha.
 
-    Argumentos: p_Teclas -> lista de posicao das teclas do teclado virtual.
-                qntdPokebolas -> inteiro positivo -> qntd atual de pokebolas
+    Args: 
+        qntdPokebolas(int):
+            qntd atual de pokebolas
 
-    Retornos:   
-                OK
-                ERRO_LANCAR_POKEBOLA
-                SO_TEM_MASTER_BALL
-                LANCOU_BOLA_ENCONTRADA
-                
+    Returns:   
+        OK
+        ERRO_LANCAR_POKEBOLA
+        SO_TEM_MASTER_BALL
+        LANCOU_BOLA_ENCONTRADA    
     '''
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_Up = p_Teclas[2]
-
-    # Verifica se já apareceu o botao "Lutar", indicando que pode lancar a pokebola
+    # Verifica se já apareceu o botao "Lutar", indicando que pode lançar a pokebola
     if not CheckPixel("Lutar"):
         return ERRO_LANCAR_POKEBOLA   
     
-    ClickTecladoVirtual(p_Right)                
-    ClickTecladoVirtual(p_Z)
-    ClickTecladoVirtual(p_Right, clicks=2)
-
+    # Selecionando a aba "Mochila"
+    Teclado(t_Right)                
+    Teclado(t_Z)
+    
+    # SELECIONANDO A ABA DE "POKEBOLAS" DA MOCHILA, PARA ENTÃO USAR A POKEBOLA
+    if qntdPokebolas > 0:
+        erro = EncontrarAbaPokebola(bola="Pokebola")
+        if erro != OK:
+            return erro
+    ########
+    # Caso já tenha acabado as pokebolas.
+    else: 
+        # TODO: Testar e ver se realmente as pokebolas ficam nessa ordem. 
+        #       (premier poderia ficar na frente da great?)
+        #
+        # Pokebola é verificada para ver se tem pokebolas residuais (< 99)
+        outras_bolas = ["Pokebola", "GreatBall", "UltraBall"]
+        for bola in outras_bolas:
+            encontrou = EncontrarAbaPokebola(bola=bola)
+            if encontrou == OK: break
 
     ################## SE ACABOU AS POKEBOLAS ENQUANTO LUTAVA ###############
 
@@ -1233,7 +1276,7 @@ def LancarPokebola(p_Teclas, qntdPokebolas):
             chegouFim = False
             qntdPack = 0
             while not CheckPixel("GreatBall", tentativas=5) and not chegouFim:  
-                ClickTecladoVirtual(p_Down)
+                Teclado(t_Down)
                 time.sleep(0.1)
                 im = pyautogui.screenshot()
                 corBolaAtual = im.getpixel((627, 714))
@@ -1252,7 +1295,7 @@ def LancarPokebola(p_Teclas, qntdPokebolas):
                 
                 # Verificando se tem ultra ball
                 while not CheckPixel("UltraBall", tentativas=5) and not chegouFim:  
-                    ClickTecladoVirtual(p_Up)
+                    Teclado(t_Up)
                     time.sleep(0.1)
                     im = pyautogui.screenshot()
                     corBolaAtual = im.getpixel((627, 714))
@@ -1269,13 +1312,13 @@ def LancarPokebola(p_Teclas, qntdPokebolas):
                 if chegouFim:
                     # Lança a bola atual se n for uma master ball
                     if CheckPixel("MasterBall"):
-                        ClickTecladoVirtual(p_Down)
+                        Teclado(t_Down)
                         if CheckPixel("MasterBall"):
                             # Só tem master ball, dar Run.
                             return SO_TEM_MASTER_BALL
 
         # Lanca a bola encontrada (pokebola, great ball, ultra ball, ou outra)
-        ClickTecladoVirtual(p_Z)
+        Teclado(t_Z)
         
         return LANCOU_BOLA_ENCONTRADA
     # End if qntdPokebolas <= 0:   
@@ -1285,7 +1328,7 @@ def LancarPokebola(p_Teclas, qntdPokebolas):
         return ERRO_LANCAR_POKEBOLA
     
     # Lança a pokebola
-    ClickTecladoVirtual(p_Z)
+    Teclado(t_Z)
     
     return OK
 
@@ -1313,7 +1356,7 @@ def VerificarPokemonCapturado(manter_pokemon=False, tentativas=7):
 
     #Clica no botao de IV
     pyautogui.moveTo(posicaoSimboloIV)
-    ClickTecladoVirtual(posicaoSimboloIV, modo="instantaneo")
+    pyautogui.click()
 
     # Verifica se abriu a aba e espera um determinado tempo ate abrir
     pixelHelp = (posicaoSimboloIV[x] + 47, posicaoSimboloIV[y] + 257)
@@ -1349,22 +1392,23 @@ def VerificarPokemonCapturado(manter_pokemon=False, tentativas=7):
     print ("Fim")
     return COM_IV31
 
-def GuardarOuRelease(status, p_ESC, isShiny=False):
+def GuardarOuRelease(status, isShiny=False):
     '''
     Se tiver algum IV 31, guarda o pokemon capturado.
     Se não tiver, joga ele fora.
 
-    Argumentos: status -> deve ter valor de: COM_IV31 OU SEM_IV31. -> informação se tem IV 31 ou não. 
-                p_ESC -> tupla -> posicão do botão ESC do teclado virtual
-
-    Retornos:   POKEMON_GUARDADO
-                POKEMON_RELEASED
-                STATUS_INVALIDO 
-
+    Args: 
+        status(COM_IV31 ou SEM_IV31):
+            informação se tem IV 31 ou não. 
+                
+    Returns:
+        POKEMON_GUARDADO
+        POKEMON_RELEASED
+        STATUS_INVALIDO 
     '''
 
     if status == COM_IV31 or isShiny:
-        ClickTecladoVirtual(p_ESC)# Fecha a aba de status
+        Teclado(t_ESC)# Fecha a aba de status
         
         if isShiny:
             shinyFile = open("shinyFile.txt", "a")
@@ -1378,75 +1422,66 @@ def GuardarOuRelease(status, p_ESC, isShiny=False):
         print ("Jogando pokemon fora...")
         # Movendo para o menu do release
         pyautogui.moveRel(123, -2)
-        ClickTecladoVirtual(pyautogui.position(), modo="instantaneo")
+        pyautogui.click()
         
         # Movendo para o botao release
         pyautogui.moveRel(-90, 153)
-        ClickTecladoVirtual(pyautogui.position(), modo="instantaneo")
+        pyautogui.click()
         
         # Clicando em confirmar
         pyautogui.moveTo((961, 522))
-        ClickTecladoVirtual((961, 522), modo="instantaneo")
+        pyautogui.click()
         #Então, volta pro while ateh o PP do false swipe acabar
         return POKEMON_RELEASED
 
     else:
         return STATUS_INVALIDO
 
-def Virar(sentido, p_Teclas):
+def Virar(sentido):
     '''
     Vira e anda um passo pro sentido indicado.
 
-    Argumentos: 
-                sentido -> string -> para onde o personagem vai virar
-                p_Teclas -> tupla -> posição de cada tecla do teclado
+    Args: 
+        sentido(str):
+            para onde o personagem vai virar. Valores válidos para 
+            "sentido": "esquerda", "direita", "cima" e "baixo"
 
-    OBS: 
-        Valores válidos para "sentido": "esquerda", "direita", "cima" e "baixo"
-
-    Retornos:
-                OK
-                SENTIDO_INVALIDO
+    Returns:
+        OK
+        SENTIDO_INVALIDO
     '''
-
-    #Posicoes de cada tecla
-    p_Left = p_Teclas[1]          # Recebem (x,y) 
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    
-
     if sentido == "esquerda":
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
+        Teclado(t_Left, clicks=2, modo="andar")
 
     elif sentido == "cima":
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
+        Teclado(t_Up, clicks=2, modo="andar")
 
     elif sentido == "direita":
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
+        Teclado(t_Right, clicks=2, modo="andar")
 
     elif sentido == "baixo":
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
+        Teclado(t_Down, clicks=2, modo="andar")
 
     else:
         print ("Sentido inexistente")
         return SENTIDO_INVALIDO
 
-
     return OK
 
 ##### PLANTAR BERRIES #####
 
-def PlantarSementesPicantes(p_Z):
+def PlantarSementesPicantes():
     '''
     Seleciona as sementes de acordo com a semente inserida, e planta elas.
 
-    Argumentos: p_Z -> tupla -> posição da tecla Z do teclado virtual
-                semente -> string -> semente desejada
+    Args: 
+        #TODO semente(str):
+            semente desejada
 
-    Retornos:   OK
-                ERRO_PLANTAR_SEMENTES
-                SEM_SEMENTE_PICANTE
+    Returns:   
+        OK
+        ERRO_PLANTAR_SEMENTES
+        SEM_SEMENTE_PICANTE
     ''' 
 
     if not ImagemEncontrada("PlantarSementes1.png", "PlantarSementes2.png", "PlantarSementes3.png"):
@@ -1454,7 +1489,7 @@ def PlantarSementesPicantes(p_Z):
         return ERRO_PLANTAR_SEMENTES
     
     # Seleciona o primeiro slot.
-    ClickTecladoVirtual(p_Z)
+    Teclado(t_Z)
 
     # Seleciona a semente picante.
     p_picante = CentroDaImagem(PosicaoEDimensaoDaImagem("SementePicante1.png", "SementePicante2.png", "SementePicante3.png", tentativas=2))
@@ -1473,13 +1508,13 @@ def PlantarSementesPicantes(p_Z):
                 return SEM_SEMENTE_PICANTE
 
     pyautogui.moveTo(p_picante)
-    ClickTecladoVirtual(p_picante)
+    pyautogui.click()
 
     # Clica no segundo Slot
     p_Slot1 = CentroDaImagem(PosicaoEDimensaoDaImagem("Slot1.png", "Slot2.png", "Slot3.png"))
     p_Slot2 = (p_Slot1[x] + 95, p_Slot1[y] - 2) 
     pyautogui.moveTo(p_Slot2)
-    ClickTecladoVirtual(p_Slot2)
+    pyautogui.click()
 
     # Seleciona a semente picante.
     if opcao == 1:
@@ -1498,12 +1533,12 @@ def PlantarSementesPicantes(p_Z):
         return SEM_SEMENTE_PICANTE
 
     pyautogui.moveTo(p_picante)
-    ClickTecladoVirtual(p_picante)
+    pyautogui.click()
 
     # Clica no terceiro Slot
     p_Slot3 = (p_Slot2[x] + 95, p_Slot2[y] - 2)
     pyautogui.moveTo(p_Slot3)
-    ClickTecladoVirtual(p_Slot3)
+    pyautogui.click()
     
     # Seleciona a semente picante.
     if opcao == 1:
@@ -1522,7 +1557,7 @@ def PlantarSementesPicantes(p_Z):
         return SEM_SEMENTE_PICANTE
 
     pyautogui.moveTo(p_picante)
-    ClickTecladoVirtual(p_picante)
+    pyautogui.click()
 
     # Clicando em "Plantar Sementes".
     if not ImagemEncontrada("CheriBerry1.png", "CheriBerry2.png", "CheriBerry3.png"):
@@ -1531,247 +1566,235 @@ def PlantarSementesPicantes(p_Z):
 
     p_botaoPlantar = CentroDaImagem(PosicaoEDimensaoDaImagem("BotaoPlantar1.png", "BotaoPlantar2.png", "BotaoPlantar3.png"))
     pyautogui.moveTo(p_botaoPlantar)
-    ClickTecladoVirtual(p_botaoPlantar)
+    pyautogui.click()
 
     return OK
 
-def CaminharAteSlotBerry(p_Teclas, cidade="", tentativa=1):  
+def CaminharAteSlotBerry(cidade="", tentativa=1):  
     '''
     Caminha até o primeiro slot de berry de uma das cidades cadastradas.
 
-    Argumentos: 
-                p_Teclas -> tupla -> posicao de todas as teclas do teclado virtual.
-                cidade -> strings -> cidade do slot.
+    Args: 
+        cidade(str):
+            cidade do slot.
 
-    Retornos:   
-                OK
-                CIDADE_NAO_CADASTRADA
-                ERRO_CAMINHAR_ATE_SLOT
+    Returns:   
+        OK
+        CIDADE_NAO_CADASTRADA
+        ERRO_CAMINHAR_ATE_SLOT
     '''
-    
-    #Posicoes de cada tecla
-    p_Left = p_Teclas[1]           
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_F2 = p_Teclas[9]
-    p_F5 = p_Teclas[10]
-
-
-
     # Andando até o primeiro slot.
     if cidade == "Rustboro":
         
-        ClickTecladoVirtual(p_Down, clicks=3)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=11)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
+        Teclado(t_Down, clicks=3)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=11)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=2, modo="andar")
         
-        ClickTecladoVirtual(p_Down, clicks=4)
-        ClickTecladoVirtual(p_Down)
+        Teclado(t_Down, clicks=4)
+        Teclado(t_Down)
         print ("Tomando cuidado com o bug...")
         time.sleep(6)
         print ("Continuando...")
-        ClickTecladoVirtual(p_Down, clicks=3)
+        Teclado(t_Down, clicks=3)
 
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=8)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=12)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=5)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=5)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=25)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=8)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=12)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=5)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=5)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=25)
         time.sleep(0.1)
     
     
     elif cidade == "Fortree":
         
-        ClickTecladoVirtual(p_Down)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=4)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=3)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=21)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=7)
+        Teclado(t_Down)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=4)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=3)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=21)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=7)
 
         print ("Tomando cuidado com o bug...")
         time.sleep(4)
         print ("Continuando...")
         
-        ClickTecladoVirtual(p_Right, clicks=18)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=2)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=18)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
+        Teclado(t_Right, clicks=18)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=2)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=18)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
 
         # Usar Super Repel.
-        ClickTecladoVirtual(p_F5)
+        Teclado(t_SuperRepel)
         time.sleep(4)
 
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
+        Teclado(t_Left, clicks=2, modo="andar")
         time.sleep(4)
         
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=2)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=2)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=2, modo="andar")
         
     
     elif cidade == "Mauville":
         
-        ClickTecladoVirtual(p_Down, clicks=2)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=16)
+        Teclado(t_Down, clicks=2)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=16)
         
-        ClickTecladoVirtual(p_Right)
+        Teclado(t_Right)
         print ("Tomando cuidado com o bug...")
         time.sleep(4)
         print ("Continuando...")
 
-        ClickTecladoVirtual(p_Right, clicks=16)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
+        Teclado(t_Right, clicks=16)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=2, modo="andar")
 
         # Usa surf.
-        erro = UsarSurf(p_Z)
+        erro = UsarSurf()
         if erro != OK:
             print ("Erro na função \"CaminharAteSlotBerry\".")
             return erro
 
         # Surfando...
-        pyautogui.mouseDown(p_Right)
+        keyboard.press(t_Right)
         time.sleep(5.5)
-        pyautogui.mouseUp(p_Right)
+        keyboard.release(t_Right)
         time.sleep(0.5)
 
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=9)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=35)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=9)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=35)
         
         print ("Tomando cuidado com o bug...")
         time.sleep(4)
         print ("Continuando...")
 
-        ClickTecladoVirtual(p_Right, clicks=8)
+        Teclado(t_Right, clicks=8)
         
         
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=3)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=4)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=3)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=4)
 
         # Um cara bloqueando a passagem.
         passou = False
         while not passou:
             # Passando pelo cara bloqueando a passagem.
-            ClickTecladoVirtual(p_Right)
+            Teclado(t_Right)
             # Verificando se o personagem passou dele.
             chatApareceu = False
             tentativa = 1
             maxTentativas = 50
             while not chatApareceu and tentativa < maxTentativas:
-                ClickTecladoVirtual(p_Z)
+                Teclado(t_Z)
                 if CheckPixel("fimConversa", espera=0.0, tentativas=1):
                     chatApareceu = True
                 tentativa += 1
 
             if chatApareceu:
                 # Fecha a conversa.
-                ClickTecladoVirtual(p_Z)
+                Teclado(t_Z)
                 time.sleep(1.5)
             else:
                 passou = True
             
         # Continuando o trajeto até o primeiro slot.
-        ClickTecladoVirtual(p_Right, clicks=6)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=4)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=6)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=5)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left)
-        ClickTecladoVirtual(p_Up, modo="instantaneo")
+        Teclado(t_Right, clicks=6)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=4)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=6)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=5)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left)
+        Teclado(t_Up, modo="andar")
 
     elif cidade == "Mistralton":
 
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=3)
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=7)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=32)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=33)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=3)
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=7)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=32)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=33)
 
 
     elif cidade == "Undella":
         
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=6)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=9)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=30)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=7)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=24)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=6)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=9)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=30)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=7)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=24)
+        Teclado(t_Down, clicks=2, modo="andar")
         
         print ("Tomando cuidado com o bug...")
         time.sleep(4)
         print ("Continuando...")
         
-        ClickTecladoVirtual(p_Down, clicks=23)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=12)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=4)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
+        Teclado(t_Down, clicks=23)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=12)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=4)
+        Teclado(t_Left, clicks=2, modo="andar")
 
         # Usa Surf.
-        erro = UsarSurf(p_Z)
+        erro = UsarSurf()
         
         if erro != OK:
             # Quer dizer que o npc não chegou na área do surf conforme planejado.
             # Refazendo o processo de caminhada.
 
             # Voando para Undella.
-            erro = Fly(p_F2, regiao="Unova", cidade="Undella")
+            erro = Fly(regiao="Unova", cidade="Undella")
             if erro != OK:
                 return erro
 
             tentativa += 1
             if tentativa <= 5:
-                erro = CaminharAteSlotBerry(p_Teclas, cidade="Undella", tentativa=tentativa)
+                erro = CaminharAteSlotBerry(cidade="Undella", tentativa=tentativa)
                 return erro
 
             print ("Personagem não conseguiu chegar na posição do primeiro surf em Undella.")
@@ -1780,99 +1803,99 @@ def CaminharAteSlotBerry(p_Teclas, cidade="", tentativa=1):
         time.sleep(2)
 
         # Usa Super repel.
-        ClickTecladoVirtual(p_F5)
+        Teclado(t_SuperRepel)
         
         # Usa Waterfall.
-        erro = UsarWaterFall(p_Z)
+        erro = UsarWaterFall()
         if erro != OK:
             print ("Erro na função \"CaminharAteSlotBerry\".")
             return erro
 
         # Surfando...
-        pyautogui.mouseDown(p_Left)
+        keyboard.press(t_Left)
         time.sleep(1.5)
-        pyautogui.mouseUp(p_Left)
+        keyboard.release(t_Left)
 
         # Usa Waterfall.
-        erro = UsarWaterFall(p_Z)
+        erro = UsarWaterFall()
         if erro != OK:
             print ("Erro na função \"CaminharAteSlotBerry\".")
             return erro
 
         # Surfando...
-        pyautogui.mouseDown(p_Left)
+        keyboard.press(t_Left)
         time.sleep(2.3)
-        pyautogui.mouseUp(p_Left)
+        keyboard.release(t_Left)
 
         # Vai pra terra.
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
+        Teclado(t_Down, clicks=2, modo="andar")
         time.sleep(1)
 
-        ClickTecladoVirtual(p_Down, clicks=3)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=13)
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=2)
-        ClickTecladoVirtual(p_Left)
+        Teclado(t_Down, clicks=3)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=13)
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=2)
+        Teclado(t_Left)
 
         # Usa Surf.
-        erro = UsarSurf(p_Z)
+        erro = UsarSurf()
         if erro != OK:
             print ("Erro na função \"CaminharAteSlotBerry\".")
             return erro
 
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
+        Teclado(t_Down, clicks=2, modo="andar")
 
         # Usa Waterfall.
-        erro = UsarWaterFall(p_Z)
+        erro = UsarWaterFall()
         if erro != OK:
             print ("Erro na função \"CaminharAteSlotBerry\".")
             return erro
 
         # Surfando...
-        pyautogui.mouseDown(p_Down)
+        keyboard.press(t_Down)
         time.sleep(1.0)
-        pyautogui.mouseUp(p_Down)
+        keyboard.release(t_Down)
 
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
+        Teclado(t_Left, clicks=2, modo="andar")
 
         # Sai do surf e vai pra esquerda
-        pyautogui.mouseDown(p_Left)
+        keyboard.press(t_Left)
         time.sleep(5)
-        pyautogui.mouseUp(p_Left)
+        keyboard.release(t_Left)
         time.sleep(0.2)
         
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=4)
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
+        Teclado(t_Up, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=4)
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Up, clicks=2, modo="andar")
         
         # Entrando na floresta.
-        ClickTecladoVirtual(p_Up)
+        Teclado(t_Up)
         time.sleep(4)
 
-        ClickTecladoVirtual(p_Up, clicks=6)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, modo="instantaneo")
+        Teclado(t_Up, clicks=6)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Up, modo="andar")
 
     else:
         return CIDADE_NAO_CADASTRADA
 
     return OK
 
-def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamento="", modo=""):
+def PlantarRegarColherNaTiraDeSlots(numSlots, sentido="", posicionamento="", modo=""):
     '''
     Planta Cheri Berry na tira de slot no sentido indicado.
 
     Argumentos: 
-            ->  p_Z -> tupla -> obrigatório.    
-            ->  p_A -> tupla -> obrigatório. Posição da tecla de regar.    
-            ->  numSlots -> inteiro positivo -> Obrigatório. Indica quantos slots tem essa tira.
-            ->  p_Left, p_Up, p_Right, p_Down -> tupla -> Desses, só são obrigatórios os que são necessários
-            para plantar as berries no sentido desejado.
-            ->  sentido -> string -> Obrigatório. Indica o sentido de plantio na tira de slots.
-            ->  posicionamento -> string -> Obrigatório. Indica o posicionamento do personagem em relação a tira. 
-            ->  modo -> string -> indica o modo da função, se é plantar, regar ou colher.
+        numSlots(int):
+            Obrigatório. Indica quantos slots tem essa tira.
+        sentido(str):
+            Obrigatório. Indica o sentido de plantio na tira de slots.
+        posicionamento(str):
+            Obrigatório. Indica o posicionamento do personagem em relação a tira. 
+        modo(str):
+            indica o modo da função, se é plantar, regar ou colher.
 
     OBS:
         Valores válidos para "sentido": "baixo", "direita" e "esquerda"
@@ -1881,25 +1904,16 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
 
         Valores válidos para "modo": "plantar", "regar", "colher" e "colherEPlantar"
 
-    Retornos:   OK
-                FALTANDO_ARGUMENTOS 
-                POSICIONAMENTO_INVALIDO
-                SENTIDO_INVALIDO
-                ERRO_PLANTANDO_NA_TIRA_DE_SLOTS                
-                MODO_INVALIDO 
-                SETA_NAO_ENCONTRADA
-                ERRO_REGANDO
+    Returns:
+        OK
+        FALTANDO_ARGUMENTOS 
+        POSICIONAMENTO_INVALIDO
+        SENTIDO_INVALIDO
+        ERRO_PLANTANDO_NA_TIRA_DE_SLOTS                
+        MODO_INVALIDO 
+        SETA_NAO_ENCONTRADA
+        ERRO_REGANDO
     '''
-
-    #Posicoes de cada tecla
-    p_Left = p_Teclas[1]           
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_A = p_Teclas[14]
-
-
     if sentido == "":
         print ("Erro na função \"PlantandoNaTiraDeSlots\". Faltando argumento \"sentido\".")
         return FALTANDO_ARGUMENTOS
@@ -1908,21 +1922,20 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
         print ("Argumento \"modo\" inválido.")
         return MODO_INVALIDO
 
-
     #### Verificando o sentido e o posicionamento inserido, para ajustar as variáveis p_Tecla1 e p_Tecla2. ####
     
     if sentido == "baixo":
-        p_Tecla1 = p_Down
-        p_Tecla2 = p_Left
+        p_Tecla1 = t_Down
+        p_Tecla2 = t_Left
     
     elif sentido == "direita":
         if posicionamento == "acima":
-            p_Tecla1 = p_Right
-            p_Tecla2 = p_Down
+            p_Tecla1 = t_Right
+            p_Tecla2 = t_Down
         
         elif posicionamento == "abaixo":
-            p_Tecla1 = p_Right
-            p_Tecla2 = p_Up
+            p_Tecla1 = t_Right
+            p_Tecla2 = t_Up
         
         else:
             print ("Erro na função \"PlantandoNaTiraDeSlots\". Argumento \"posicionamento\" inválido.")
@@ -1930,12 +1943,12 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
     
     elif sentido == "esquerda":
         if posicionamento == "acima":
-            p_Tecla1 = p_Left
-            p_Tecla2 = p_Down
+            p_Tecla1 = t_Left
+            p_Tecla2 = t_Down
     
         elif posicionamento == "abaixo":
-            p_Tecla1 = p_Left
-            p_Tecla2 = p_Up
+            p_Tecla1 = t_Left
+            p_Tecla2 = t_Up
        
         else:
             print ("Erro na função \"PlantandoNaTiraDeSlots\". Argumento \"posicionamento\" inválido.")
@@ -1962,8 +1975,8 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
             if modo != "regar":
                 # Interagindo com o slot de berry.
                 time.sleep(0.5)
-                ClickTecladoVirtual(p_Z)
-                erro = ContinuarConversa(p_Z)
+                Teclado(t_Z)
+                erro = ContinuarConversa()
                 if erro != OK:
                     print ("Erro na função \"PlantandoNaTiraDeSlots\"")
                     return erro
@@ -1973,7 +1986,7 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
                     return ERRO_PLANTANDO_NA_TIRA_DE_SLOTS
                 
                 # Aperta "Sim"
-                ClickTecladoVirtual(p_Z)
+                Teclado(t_Z)
 
                 if modo == "plantar":
                     
@@ -1981,21 +1994,19 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
                     print("Plantando no slot...")
                     
                     if ImagemEncontrada("CheriBerry1.png", "CheriBerry2.png", "CheriBerry3.png", tentativas=3): # Se as sementes já estiverem selecionadas.
-                        ClickTecladoVirtual(p_Z)
+                        Teclado(t_Z)
                     else:
-                        erro = PlantarSementesPicantes(p_Z)
+                        erro = PlantarSementesPicantes()
                         if erro != OK:
                             print ("Erro na função \"PlantandoNaTiraDeSlots\"")
                             return erro
 
-
                 # Termina a interação.
-                erro = ContinuarConversa(p_Z)
+                erro = ContinuarConversa()
                 if erro != OK:
                     print ("Erro na função \"PlantandoNaTiraDeSlots\"")
                     return erro
                 time.sleep(0.3)
-
 
             if modo != "colher":
 
@@ -2006,7 +2017,7 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
 
                     # Regando esse slot.
                     print ("Regando...")
-                    ClickTecladoVirtual(p_A)
+                    Teclado(t_Regar)
                     
                     # Verificando se regou
                     regou = CheckPixel("balaoChat")
@@ -2026,44 +2037,32 @@ def PlantarRegarColherNaTiraDeSlots(p_Teclas, numSlots, sentido="", posicionamen
 
         if slot < numSlots - 1:
             # Indo para o próximo slot.
-            ClickTecladoVirtual(p_Tecla1, clicks=2, modo="instantaneo")
-            ClickTecladoVirtual(p_Tecla2, modo="instantaneo")
+            Teclado(p_Tecla1, clicks=2, modo="andar")
+            Teclado(p_Tecla2, modo="andar")
 
         slot += 1
 
     return OK
 
-def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
+def CultivarBerriesHoenn(regiaoOrigem, modo=""):
     '''
     Plantar, regar ou colher todos os slots de Hoenn.
 
-    Argumentos: 
-                p_Teclas -> tupla -> lista com todas as posições das teclas
-                regiaoOrigem -> string -> Regiao que o personagem se encontra atualmente.
-                modo -> string -> indica o modo da função, se é plantar, regar ou colher.
-
-        OBS:
-            Valores válidos para "modo": "plantar", "regar", "colher" e "colherEPlantar"
+    Args: 
+        regiaoOrigem(str):
+            Regiao que o personagem se encontra atualmente.
+        modo(str):
+            indica o modo da função, se é plantar, regar ou colher.
+            Valores válidos para "modo": "plantar", "regar", 
+            "colher" e "colherEPlantar".
 
     Retornos:   
-                OK
-
+        OK
     '''
-    
-    #Posicoes de cada tecla
-    p_Left = p_Teclas[1]          # Recebem (x,y) 
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_F1 = p_Teclas[8]
-    p_F2 = p_Teclas[9]
-    
-    
     # Indo para Hoenn, se o personagem não estiver.
     if regiaoOrigem != "Hoenn":
         print ("Mudando para Hoenn...")
-        erro = TrocarRegiao(p_Teclas, regiaoOrigem=regiaoOrigem, regiaoDestino="Hoenn")
+        erro = TrocarRegiao(regiaoOrigem=regiaoOrigem, regiaoDestino="Hoenn")
         if erro != OK:
             return erro
     
@@ -2073,49 +2072,49 @@ def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
     while repetir:
         # Voando para Rustboro City.
         print ("Usando Fly para Rustboro City...")
-        erro = Fly(p_F2, "Hoenn", cidade="Rustboro")
+        erro = Fly("Hoenn", cidade="Rustboro")
         if erro != OK:
             return erro
         print ("Chegou em Rustboro.")
     
         # Caminhando até o primeiro slot.
         print ("Caminhando para o primeiro slot...")
-        CaminharAteSlotBerry(p_Teclas, cidade="Rustboro")
+        CaminharAteSlotBerry(cidade="Rustboro")
         
-        if ChegouNoSlotBerry(p_Down, p_Z, modo):
+        if ChegouNoSlotBerry(modo):
             repetir = False
     
     print ("Plantando...")
     # Plantando na primeira tira
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 5, sentido="baixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(5, sentido="baixo", modo=modo)
     if erro != OK:
         return erro
     
     # Caminhando até a segunda tira.
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Right, clicks=5)
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=10)
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Right, clicks=5)
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=10)
     
 
     #Plantando na segunda tira
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 3, sentido="direita", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(3, sentido="direita", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
     
     # Caminhando até a terceira tira.
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up)
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up)
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Up)
     time.sleep(0.5)
     
     
     # Plantando na terceira tira
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 3, sentido="esquerda", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(3, sentido="esquerda", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
     
@@ -2126,7 +2125,7 @@ def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
         
         # Voando para Fortree City.
         print ("Usando Fly para Fortree City...")
-        erro = Fly(p_F2, "Hoenn", cidade="Fortree")
+        erro = Fly("Hoenn", cidade="Fortree")
         if erro != OK:
             return erro
         print ("Chegou em Fortree.")
@@ -2137,27 +2136,27 @@ def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
         if tentativa > 1:
             
             # Gastando os restante de passos de super repel.
-            Virar("direita", p_Teclas)
-            ClickTecladoVirtual(p_Left)
-            Virar("baixo", p_Teclas)
-            ClickTecladoVirtual(p_Down, clicks=3)
-            ClickTecladoVirtual(p_F1)
+            Virar("direita")
+            Teclado(t_Left)
+            Virar("baixo")
+            Teclado(t_Down, clicks=3)
+            Teclado(t_Bike)
                         
             while not CheckPixel("Sim", espera=0.0, tentativas=1):
-                pyautogui.mouseDown(p_Left)
+                keyboard.press(t_Left)
                 time.sleep(1)
-                pyautogui.mouseUp(p_Left)
-                pyautogui.mouseDown(p_Right)
+                keyboard.release(t_Left)
+                keyboard.release(t_Right)
                 time.sleep(1)
-                pyautogui.mouseUp(p_Right)
+                keyboard.release(t_Right)
 
             # Clica para não estender.
-            ClickTecladoVirtual(p_Down)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Down)
+            Teclado(t_Z)
 
             # Voando para Fortree City.
             print ("Usando Fly para Fortree City...")
-            erro = Fly(p_F2, "Hoenn", cidade="Fortree")
+            erro = Fly("Hoenn", cidade="Fortree")
             if erro != OK:
                 return erro
             print ("Chegou em Fortree.")
@@ -2166,11 +2165,11 @@ def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
 
 
         # Caminhando até o primeiro slot.
-        print ("Caminhando para o primeiro slot...")
-        CaminharAteSlotBerry(p_Teclas, cidade="Fortree")
+        print("Caminhando para o primeiro slot...")
+        CaminharAteSlotBerry(cidade="Fortree")
         
 
-        if ChegouNoSlotBerry(p_Down, p_Z, modo):
+        if ChegouNoSlotBerry(modo):
             # Sai do while.
             tentativa = 0
         else:
@@ -2180,14 +2179,14 @@ def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
 
     # Plantando na primeira tira.
     print ("Plantando...")
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Up, modo="instantaneo")
+    Teclado(t_Up, modo="andar")
     
     # Plantando na segunda tira.
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 4, sentido="esquerda", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(4, sentido="esquerda", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
     
@@ -2196,14 +2195,14 @@ def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
 
     # Voando para Mauville.
     print ("Usando Fly para Mauville City...")
-    erro = Fly(p_F2, "Hoenn", cidade="Mauville")
+    erro = Fly("Hoenn", cidade="Mauville")
     if erro != OK:
         return erro
     print ("Chegou em Mauville.")
     
     # Caminhando até o primeiro slot.
     print ("Caminhando para o primeiro slot...")
-    erro = CaminharAteSlotBerry(p_Teclas, cidade="Mauville")
+    erro = CaminharAteSlotBerry(cidade="Mauville")
     if erro != OK:
         return erro
 
@@ -2212,60 +2211,50 @@ def CultivarBerriesHoenn(p_Teclas, regiaoOrigem, modo=""):
     repetir = 0
     while repetir <= 2:
         # Plantando na tira de cima.
-        erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 2, sentido="direita", posicionamento="abaixo", modo=modo)
+        erro = PlantarRegarColherNaTiraDeSlots(2, sentido="direita", posicionamento="abaixo", modo=modo)
         if erro != OK:
             return erro
 
-        ClickTecladoVirtual(p_Down)
+        Teclado(t_Down)
 
         # Plantando na tira de baixo.
-        erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 2, sentido="esquerda", posicionamento="acima", modo=modo)
+        erro = PlantarRegarColherNaTiraDeSlots(2, sentido="esquerda", posicionamento="acima", modo=modo)
         if erro != OK:
             return erro
 
         # Indo pra tira à direita.        
         if repetir <= 1:
-            ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-            ClickTecladoVirtual(p_Right, clicks=2)
-            ClickTecladoVirtual(p_Up)
+            Teclado(t_Right, clicks=2, modo="andar")
+            Teclado(t_Right, clicks=2)
+            Teclado(t_Up)
 
         repetir += 1
 
 
     return OK
 
-def CultivarBerriesUnova(p_Teclas, regiaoOrigem, modo=""):
+def CultivarBerriesUnova(regiaoOrigem, modo=""):
     '''
     Plantar, regar ou colher todos os slots de Unova.
 
-    Argumentos: 
-                p_Teclas -> tupla -> lista com todas as posições das teclas
-                regiaoOrigem -> string -> Regiao que o personagem se encontra atualmente.
-                modo -> string -> indica o modo da função, se é plantar, regar ou colher.
+    Args: 
+        regiaoOrigem(str):
+            Regiao que o personagem se encontra atualmente.
+        modo(str):
+            indica o modo da função, se é plantar, regar ou colher.
+            Valores válidos para "modo": "plantar", "regar", 
+            "colher" e "colherEPlantar".
 
-        OBS:
-            Valores válidos para "modo": "plantar", "regar", "colher" e "colherEPlantar"
-
-
-    Retornos:   OK
-                Muitos outros
+    Returns:
+        OK
+        Muitos outros
     '''
-
-    p_Left = p_Teclas[1]           
-    p_Up = p_Teclas[2]
-    p_Right = p_Teclas[3]
-    p_Down = p_Teclas[4]
-    p_Z = p_Teclas[5]
-    p_F2 = p_Teclas[9]
-    p_F6 = p_Teclas[11]
-
-    
     # Indo para Unova, se o personagem não estiver.
     if regiaoOrigem != "Unova":
         print ("Mudando para Unova...")
         
         # Trocando de região.
-        erro = TrocarRegiao(p_Teclas, regiaoOrigem=regiaoOrigem, regiaoDestino="Unova")
+        erro = TrocarRegiao(regiaoOrigem=regiaoOrigem, regiaoDestino="Unova")
         if erro != OK:
             return erro
     
@@ -2277,16 +2266,16 @@ def CultivarBerriesUnova(p_Teclas, regiaoOrigem, modo=""):
         # Voando para Mistralton City.
         print ("Usando Fly para Mistralton City...")
         
-        erro = Fly(p_F2, "Unova", cidade="Mistralton")
+        erro = Fly("Unova", cidade="Mistralton")
         if erro != OK:
             return erro
         print ("Chegou em Mistralton.")
         
         # Caminhando até o primeiro slot.
         print ("Caminhando para o primeiro slot...")
-        CaminharAteSlotBerry(p_Teclas, cidade="Mistralton")
+        CaminharAteSlotBerry(cidade="Mistralton")
 
-        if ChegouNoSlotBerry(p_Down, p_Z, modo):
+        if ChegouNoSlotBerry(modo):
             repetir = False
     
     # Cultivando nos slots.
@@ -2294,40 +2283,40 @@ def CultivarBerriesUnova(p_Teclas, regiaoOrigem, modo=""):
     repetir = 0
     while repetir <= 2:
 
-        erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="acima", modo=modo)
+        erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="acima", modo=modo)
         if erro != OK:
             return erro
                 
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Right, clicks=3)
-        ClickTecladoVirtual(p_Down, modo="instantaneo")
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Right, clicks=3)
+        Teclado(t_Down, modo="andar")
 
-        erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="acima", modo=modo)
+        erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="acima", modo=modo)
         if erro != OK:
             return erro
 
-        ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Down, clicks=2)
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Up, modo="instantaneo")
+        Teclado(t_Right, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=2, modo="andar")
+        Teclado(t_Down, clicks=2)
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Up, modo="andar")
 
-        erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="abaixo", modo=modo)
+        erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="abaixo", modo=modo)
         if erro != OK:
             return erro
 
-        ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-        ClickTecladoVirtual(p_Left, clicks=3)
-        ClickTecladoVirtual(p_Up, modo="instantaneo")
+        Teclado(t_Left, clicks=2, modo="andar")
+        Teclado(t_Left, clicks=3)
+        Teclado(t_Up, modo="andar")
 
 
-        erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="abaixo", modo=modo)
+        erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="abaixo", modo=modo)
         if erro != OK:
             return erro
 
         if repetir <= 1:
-            ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-            ClickTecladoVirtual(p_Down)
+            Teclado(t_Down, clicks=2, modo="andar")
+            Teclado(t_Down)
 
         repetir += 1
 
@@ -2337,226 +2326,226 @@ def CultivarBerriesUnova(p_Teclas, regiaoOrigem, modo=""):
     # Voando para Undella Town.
     print ("Usando Fly para Undella Town...")
     
-    erro = Fly(p_F2, "Unova", cidade="Undella")
+    erro = Fly("Unova", cidade="Undella")
     if erro != OK:
         return erro
     print ("Chegou em Undella.")
 
     # Caminhando até o primeiro slot.
     print ("Caminhando para o primeiro slot...")
-    erro = CaminharAteSlotBerry(p_Teclas, cidade="Undella")
+    erro = CaminharAteSlotBerry(cidade="Undella")
     if erro != OK:
         print ("Erro CaminharAteSlotBerry em Undella.")
         return erro
     
     # Cultivando nos slots.
     print ("Cultivando...")
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
     
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, modo="instantaneo")
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Down, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Left, clicks=7)
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Right)
-    ClickTecladoVirtual(p_Up, modo="instantaneo")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Left, clicks=7)
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Right)
+    Teclado(t_Up, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2)
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, modo="instantaneo")
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2)
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Down, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Left, clicks=6)
-    ClickTecladoVirtual(p_Down, modo="instantaneo")
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Left, clicks=6)
+    Teclado(t_Down, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, modo="instantaneo")
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Up, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Left, clicks=5)
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Left, clicks=5)
 
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down)
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Left, clicks=10)
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
+    Teclado(t_Down, clicks=2, modo="andar")
+    Teclado(t_Down)
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Left, clicks=10)
+    Teclado(t_Down, clicks=2, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, modo="instantaneo")
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Up, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Left, clicks=5)
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=8)
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Left, clicks=5)
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=8)
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up)
 
     
     # Verifica se o repel acabou e se veio a pergunta de estender com mais um.
-    erro = EstenderRepel(p_Teclas, escolha="N")
+    erro = EstenderRepel(escolha="N")
 
-    ClickTecladoVirtual(p_Up)
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, modo="instantaneo")
+    Teclado(t_Up)
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Down, modo="andar")
 
     # Se, na vdd, não foi encontrado a pergunta de estender o repel.
     if erro != OK:
         # Verifica se mesmo assim o personagem chegou no local desejado.
-        if not ChegouNoSlotBerry(p_Down, p_Z, modo=modo):
+        if not ChegouNoSlotBerry(modo=modo):
             print ("Erro de posição do personagem. Não chegou na parte de estender o repel.")
             return erro
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Left)
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=3)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Right, clicks=2)
-    ClickTecladoVirtual(p_Up, modo="instantaneo")
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Left)
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=3)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Right, clicks=2)
+    Teclado(t_Up, modo="andar")
     
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, modo="instantaneo")
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Down, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Right, clicks=3)
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, clicks=12)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Right, clicks=5)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Right, clicks=3)
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=2, modo="andar")
+    Teclado(t_Up, clicks=12)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Right, clicks=5)
 
     # Usar Repel.
-    ClickTecladoVirtual(p_F6)
+    Teclado(t_Repel)
 
     # Usa Surf.
-    erro = UsarSurf(p_Z)
+    erro = UsarSurf()
     if erro != OK:
         print ("Erro na função \"CaminharAteSlotBerry\".")
         return erro
 
     # Vai surfando pra direita
-    pyautogui.mouseDown(p_Right)
+    keyboard.release(t_Right)
     time.sleep(3.5)
-    pyautogui.mouseUp(p_Right)
+    keyboard.release(t_Right)
     time.sleep(0.2)
 
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2)
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, modo="instantaneo")
+    Teclado(t_Down, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2)
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Down, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="direita", posicionamento="acima", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="direita", posicionamento="acima", modo=modo)
     if erro != OK:
         return erro
 
-    ClickTecladoVirtual(p_Right, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Down, clicks=2)
-    ClickTecladoVirtual(p_Left, clicks=2, modo="instantaneo")
-    ClickTecladoVirtual(p_Up, modo="instantaneo")
+    Teclado(t_Right, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2, modo="andar")
+    Teclado(t_Down, clicks=2)
+    Teclado(t_Left, clicks=2, modo="andar")
+    Teclado(t_Up, modo="andar")
 
-    erro = PlantarRegarColherNaTiraDeSlots(p_Teclas, 6, sentido="esquerda", posicionamento="abaixo", modo=modo)
+    erro = PlantarRegarColherNaTiraDeSlots(6, sentido="esquerda", posicionamento="abaixo", modo=modo)
     if erro != OK:
         return erro
     
 
     return OK
 
-def UsarSurf(p_Z):
+def UsarSurf():
     '''
     Usa surf.
 
-    Argumentos: p_Z -> tupla -> posição da tecla Z 
+    Argumentos: t_Z -> tupla -> posição da tecla Z 
     
     Retornos:   OK
                 ERRO_SURF
     '''
     # Aperta Z para surfar.
     time.sleep(0.5)
-    ClickTecladoVirtual(p_Z)
+    Teclado(t_Z)
     
     # Selecionando Yes.
     if not CheckPixel("Sim"):
         print ("Não encontrou o botão \"Sim\" para surfar.")
         return ERRO_SURF
     
-    ClickTecladoVirtual(p_Z)
+    Teclado(t_Z)
     
     # Terminar interação.
-    erro = ContinuarConversa(p_Z)
+    erro = ContinuarConversa()
     if erro != OK:
         print ("Erro na função \"UsarSurf\".")
         return erro
@@ -2565,17 +2554,17 @@ def UsarSurf(p_Z):
 
     return OK
 
-def UsarWaterFall(p_Z):
+def UsarWaterFall():
     '''
     Usa waterfall.
 
-    Argumentos: p_Z -> tupla -> posição da tecla Z 
+    Argumentos: t_Z -> tupla -> posição da tecla Z 
     
     Retornos:   OK
                 ERRO_WATERFALL
     '''
     # Mesma ideia do surf.
-    erro = UsarSurf(p_Z)
+    erro = UsarSurf()
     if erro != OK:
         print ("Erro usando Watterfall.")
         return erro
@@ -2583,33 +2572,31 @@ def UsarWaterFall(p_Z):
     time.sleep(1)
     return OK
 
-def ChegouNoSlotBerry(p_Down, p_Z, modo):
+def ChegouNoSlotBerry(modo):
     '''
     Verifica se o personagem chegou no slot de berry desejado.
     
-    Argumentos: 
-                p_Down -> tupla -> posição da seta pra baixo 
-                p_Z -> tupla -> posição da tecla Z 
-                modo -> string -> indica o modo da função, se é plantar, regar ou colher.
+    Args: 
+        modo(str):
+            indica o modo da função, se é plantar, regar ou colher.
 
         OBS:
             Valores válidos para "modo": "plantar", "regar", "colher" e "colherEPlantar"
-
 
     Retornos:   True ou False
     
     '''
     # Interagindo com o slot de berry.
     time.sleep(0.5)
-    ClickTecladoVirtual(p_Z)
+    Teclado(t_Z)
     
-    erro = ContinuarConversa(p_Z)
+    erro = ContinuarConversa()
     if erro != OK:
         print ("Não chegou no slot")
         return False
     
     if modo == "regar":
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             print ("Não chegou no slot")
             return False
@@ -2619,12 +2606,12 @@ def ChegouNoSlotBerry(p_Down, p_Z, modo):
         return False
     
     # Aperta "Não"
-    ClickTecladoVirtual(p_Down)
+    Teclado(t_Down)
     time.sleep(0.2)
-    ClickTecladoVirtual(p_Z)
+    Teclado(t_Z)
     
     if modo == "colher" or modo == "colherEPlantar":
-        erro = ContinuarConversa(p_Z)
+        erro = ContinuarConversa()
         if erro != OK:
             print ("Não chegou no slot")
             return False
@@ -2640,12 +2627,14 @@ def StringTuplaParaTupla(string):
     Essa função foi feita para ser usada para pixel e cores do pixel, mas pode ser usada para o que for necessário,
     se possível.
 
-    Argumentos:
-                string -> string -> string no formato "(a, b)"
+    Args:
+        string(str):
+            string no formato "(a, b)"
     
-    Retorns:    tupla
-                TUPLA_INVALIDA
-                STRING_VAZIA
+    Returns:
+        tupla
+        TUPLA_INVALIDA
+        STRING_VAZIA
     '''
     if len(string) == 0:
         return STRING_VAZIA
@@ -2713,26 +2702,26 @@ def StringTuplaParaTupla(string):
         pixel = (int(coordenada[x]), int(coordenada[y]), int(coordenada[z]))
     else:
         pixel = (int(coordenada[x]), int(coordenada[y]))
-    print (pixel)
+    print(pixel)
     return pixel
 
 def AdquirirDadosHorda(nomeArquivo=""):
     '''
     Retorna todas as posições, registradas no arquivo, de cada pokemon da horda.
 
-    Argumentos: nomeArquivo -> string -> nome do arquivo que contém as posições (sem a extensão)
+    Args: 
+        nomeArquivo(str):
+            nome do arquivo que contém as posições (sem a extensão)
 
-    Retornos:
-                lista posições para cada pokemon da horda (lista de lista)
-                ERRO_CRIANDO_ARQUIVO
-                TUPLA_INVALIDA
+    Returns:
+        lista posições para cada pokemon da horda (lista de lista)
+        ERRO_CRIANDO_ARQUIVO
+        TUPLA_INVALIDA
 
     '''
     if nomeArquivo == "":
         return FALTANDO_ARGUMENTOS
 
-    # Nomeando o arquivo
-    nomeArquivo = nomeArquivo + ".txt"
     try:
         hordaFile = open(nomeArquivo, "r")
     except:
@@ -2777,18 +2766,18 @@ def CadastrarPosicaoHorda(nomeArquivo, posicao, linhaAlvo):
     Cadastra a posição desejada no arquivo da horda. O arquivo da horda tem que estar correto,
     pois essa função não consegue identificar erros.
     
-    Argumentos: nomeArquivo -> string -> nome do arquivo com os dados já cadastrados da horda (sem o .txt)
-                
-                posicao -> tupla -> posição que deseja cadastrar no arquivo
-                
-                linhaAlvo -> int -> numero da linha correspondente ao pokemon (pokemon do lado inferior
+    Args: 
+        nomeArquivo(str):
+            nome do arquivo com os dados já cadastrados da horda (sem o .txt)    
+        posicao(tuple):
+            posição que deseja cadastrar no arquivo
+        linhaAlvo(int):
+            numero da linha correspondente ao pokemon (pokemon do lado inferior
             direito, pokemon do lado inferior esquerdo, etc.)
     
-    Retornos:   OK
+    Returns:   
+        OK
     '''       
-    # Nomeando o arquivo
-    nomeArquivo = nomeArquivo + ".txt"
-    
     # Abrindo o arquivo.
     try:
         hordaMagikarpFile = open(nomeArquivo, "r")
@@ -2829,22 +2818,31 @@ def CadastrarPosicaoHorda(nomeArquivo, posicao, linhaAlvo):
     hordaMagikarpFile.close()
     return OK
 
-
-def ReconhecerHorda(pokemonAlvo, listaPosicoes):
+# TESTADO !!!!: O QUE IDENTIFICOU O SHINY FOI A POSIÇÃO DO CENTRO DO BALÃO
+# MOTIVO: O NOME "shiny magikarp" TEM UM CENTRO DIFERENTE DE "Magikarp", O
+#         QUE PROVOCA QUE O BALÃO SE DESLOQUE PARA A ESQUERDA.
+#
+# OBS: A IMAGEM DO BALÃO SHINY É A ***MESMA*** DO BALÃO DO POKEMON NORMAL.
+#      O SCRIPT IDENTIFICOU O BALÃO COMO UM DOS EXISTENTES.
+def ReconhecerHorda(pokemonAlvo, listaPosicoes, cadastrar=False):
     '''
-    Uma vez usado o sweet scent, reconhece cada pokemon da horda, verificando também se é shiny.
+    Uma vez usado o sweet scent, reconhece cada pokemon da horda, 
+    verificando também se é shiny.
     
-    Argumentos:
-                pokemonAlvo -> string -> pokemon que o script objetiva
-                listaPosicoes -> lista com 5 elementos -> lista de posicoes de cada pokemon da horda (lista de lista)
+    Args:
+        pokemonAlvo(str):
+            pokemon que o script objetiva
+        listaPosicoes(list):
+            Lista com 5 elementos. Lista de posicoes de cada 
+            pokemon da horda (lista de lista)
 
-    Retornos:   
-                CADASTROU_NOVA_POSICAO
-                ACHOU_SHINY_NA_HORDA + int
-                SEM_SHINY
-            Erros:
-                HORDA_NAO_APARECEU
-                LISTA_INVALIDA
+    Returns:   
+        CADASTROU_NOVA_POSICAO
+        ACHOU_SHINY_NA_HORDA + int
+        SEM_SHINY
+        Erros:
+            HORDA_NAO_APARECEU
+            LISTA_INVALIDA
     '''
     if len(listaPosicoes) != 5:
         print ("Lista de posições, da horda, inválida.")
@@ -2857,13 +2855,14 @@ def ReconhecerHorda(pokemonAlvo, listaPosicoes):
         print ("Nao apareceu o nome do pokemon. Provavelmente estah numa acao diferente")
         return HORDA_NAO_APARECEU 
 
+    situacao = SEM_SHINY
     if pokemonAlvo == "Magikarp":
         for magikarp in range(5):
             # Colocando o cursor em cima do nome do respectivo magikarp.
             pyautogui.moveTo(POSITIONS_HORDE_MOUSE[magikarp], duration=0.1)
         
-            posicaoMagikarp = CentroDaImagem(PosicaoEDimensaoDaImagem("MagikarpChuva1.png", 
-                    "Magikarp2.png", "MagikarpChuva2.png", "MagikarpChuva2Nivel10.png", tentativas=2, espera=0.0))
+            posicaoMagikarp = CentroDaImagem(PosicaoEDimensaoDaImagem("Magikarp1.png", 
+                    "Magikarp2.png", "Magikarp3.png", tentativas=2, espera=0.0))
         
             # Imagem nao foi reconhecida. Nao eh magikarp ou nao foi reconhecido. Pode ser um shiny ou n.
             if posicaoMagikarp == IMG_NAO_ENCONTRADA: 
@@ -2884,22 +2883,22 @@ def ReconhecerHorda(pokemonAlvo, listaPosicoes):
                 count += 1
             
             if not posicaoJaCadastrada:
-                return ACHOU_SHINY_NA_HORDA + magikarp
-                '''
+                if not cadastrar:
+                    return ACHOU_SHINY_NA_HORDA + magikarp
                 # -------------------------------------------------------------------- #
                 #           Parte dedicada para cadastrar novas hordas                 #
                 # -------------------------------------------------------------------- #                  
-                hordaFile = FILESDIR + "HordaMagikarp" 
+                hordaFile = os.path.join(FILESDIR, HORDA_FILE) 
                 CadastrarPosicaoHorda(hordaFile, posicaoMagikarp, linhaAlvo=magikarp+1)
                 listaPosicoes[magikarp].append(posicaoMagikarp)
                 #----------------------------------------------------------------------#
 
                 # Alguma posição, de algum pokemon dessa horda, não era conhecida e foi cadastrada.
                 situacao = CADASTROU_NOVA_POSICAO
-                '''
-    return SEM_SHINY
+                
+    return situacao
 
-def KillNonShinyHorde(p_Keys, pokemon_position):
+def KillNonShinyHorde(pokemon_position):
     """Mata todos os pokemons da horda que não sejam shinys
 
     Args:
@@ -2912,33 +2911,29 @@ def KillNonShinyHorde(p_Keys, pokemon_position):
         str: ERROR_KILL_POKEMON_HORDE
         str: OK
     """
-    p_Right = p_Keys[3]
-    p_Down = p_Keys[4]
-    p_Z = p_Keys[5]
-
     toKillList = [1, 2, 3, 4, 5]
     toKillList.remove(pokemon_position)
 
     for attack in toKillList:
         # Select the main attack
-        ClickTecladoVirtual(p_Z, clicks=2)
+        Teclado(t_Z, clicks=2)
 
         # Choose the pokemon
         if attack == 1:
-            ClickTecladoVirtual(p_Down)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Down)
+            Teclado(t_Z)
         elif attack == 2:
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Z)
         elif attack == 3:
-            ClickTecladoVirtual(p_Right)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Right)
+            Teclado(t_Z)
         elif attack == 4:
-            ClickTecladoVirtual(p_Right, clicks=2)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Right, clicks=2)
+            Teclado(t_Z)
         elif attack == 5:
-            ClickTecladoVirtual(p_Right, clicks=2)
-            ClickTecladoVirtual(p_Down)
-            ClickTecladoVirtual(p_Z)
+            Teclado(t_Right, clicks=2)
+            Teclado(t_Down)
+            Teclado(t_Z)
         
         time.sleep(8)
         #Verify if the "Lutar" button has appeared. 
@@ -2947,7 +2942,7 @@ def KillNonShinyHorde(p_Keys, pokemon_position):
             return ERROR_KILL_POKEMON_HORDE
     return OK
 
-def FalseSwipeHorde(p_Keys, pokemon_position, pp=30):
+def FalseSwipeHorde(pokemon_position, pp=30):
     """Usa False swipe no pokemon restante da horda.
 
     Args:
@@ -2965,9 +2960,6 @@ def FalseSwipeHorde(p_Keys, pokemon_position, pp=30):
     if pp < 0:
         return VALOR_INVALIDO_PP
     
-    p_Right = p_Keys[3]
-    p_Z = p_Keys[5]
-
     # Pixel "Vida" de cada magikarp
     pixelsList = [(631, 172),(631, 132),(891, 132),(1151, 132),(1151, 172)]
     
@@ -2982,9 +2974,10 @@ def FalseSwipeHorde(p_Keys, pokemon_position, pp=30):
             print ("ERRO_FALSE_SWIPE")
             return ERRO_FALSE_SWIPE
 
-        ClickTecladoVirtual(p_Z)
-        ClickTecladoVirtual(p_Right)
-        ClickTecladoVirtual(p_Z, clicks=2)
+        # Seleciona o false swipe e clica
+        Teclado(t_Z)
+        Teclado(t_Right)
+        Teclado(t_Z, clicks=2)
         
         time.sleep(3.2)
         lowLife = CheckPixel("Vida", pixel)
@@ -3009,3 +3002,32 @@ def RegisterShiny(filename):
     shinyMagikarpFile.writelines(conteudo)
     shinyMagikarpFile.close()
     return OK
+
+def RunUntilRunHorde():
+    '''
+    Verifica se está na batalha. Se estiver, usa "Run" até 
+    fugir.
+    
+    Returns:
+        str: ERRO_RUN
+        str: NAO_ESTA_NA_BATALHA
+        str: OK
+    '''
+    naoFugiu = CheckPixel("hordaApareceu", tentativas=2)
+    entrouWhile = False
+    while naoFugiu:
+        entrouWhile = True
+        if not CheckPixel("Lutar"):
+            return ERRO_RUN
+        
+        # Apertando Run.
+        Teclado(t_Right)
+        Teclado(t_Down)
+        Teclado(t_Z)
+        
+        time.sleep(5)
+        naoFugiu = CheckPixel("hordaApareceu", tentativas=2)
+    
+    if not entrouWhile:
+        return NAO_ESTA_NA_BATALHA
+    return USOU_RUN

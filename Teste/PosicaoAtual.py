@@ -29,13 +29,13 @@ def PosicaoAtual():
 
     '''
     while 1:
-        p_botaoPlantar = CentroDaImagem(PosicaoEDimensaoDaImagem("SementePicSelecionada1.png", "SementePicSelecionada2.png", 
+        t_BolsaotaoPlantar = CentroDaImagem(PosicaoEDimensaoDaImagem("SementePicSelecionada1.png", "SementePicSelecionada2.png", 
                                 "SementePicSelecionada3.png"))
-        if p_botaoPlantar == IMG_NAO_ENCONTRADA:
+        if t_BolsaotaoPlantar == IMG_NAO_ENCONTRADA:
             print ("Não encontrada.")
             return -1
         else:
-            pyautogui.moveTo(p_botaoPlantar)
+            pyautogui.moveTo(t_BolsaotaoPlantar)
             time.sleep(2)
             print ("Encontrada.")
         pyautogui.moveTo(500, 500)

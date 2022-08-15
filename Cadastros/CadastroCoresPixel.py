@@ -1,5 +1,4 @@
 import pyautogui
-import os
 import time
 import sys
 sys.path.append("..")
@@ -120,6 +119,15 @@ def main():
     print ("Digite as coordenadas do pixel no formato \"(x, y)\".")
     pixelString = input("\nCoordenada: ")  
 
+    if pixelString == "":
+        pixel = pyautogui.position()
+        print ("Coordenada =", pixel)
+    else:
+        pixel = StringTuplaParaTupla(pixelString)
+        if pixel == TUPLA_INVALIDA:
+            print ("Pixel inválido.")
+            return TUPLA_INVALIDA
+
     print ("Agora crie um nome para esse pixel. Esse será o nome do arquivo gerado.")
     nomePixel = input("\nNome do pixel: ")
 
@@ -127,24 +135,15 @@ def main():
         print ("Nome inválido.")
         return -1
 
-    pixel = StringTuplaParaTupla(pixelString)
-    if pixel == TUPLA_INVALIDA:
-        print ("Pixel inválido.")
-        return TUPLA_INVALIDA
-
+    print ("Começa em 5 segundos...")
     print ("Executando o programa...")
     
-
-
     erro = RegistrarCorPixel(pixel, nomePixel)
     if erro != OK:
         print ("Erro #", erro, " executando a função \"RegistrarCorPixel\".", sep="")
         return erro
 
     return OK
-
-
-# x=891, y=132
 
 main()
 
