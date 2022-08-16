@@ -1,4 +1,3 @@
-from PIL.Image import ENCODERS
 from utils.Functions import *
 
 ERRO_PLANTAR_BERRY = "57 - ERRO_PLANTAR_BERRY"
@@ -384,6 +383,7 @@ def BotMagikarpShiny(aberto=True, cadastrar=False):
         encontros = 0
 
     while True:
+        print("Indo capturar...")
         Teclado(t_Bike)
         time.sleep(0.5)
         Teclado(t_Down, clicks=6, modo="bike")
@@ -420,12 +420,13 @@ def BotMagikarpShiny(aberto=True, cadastrar=False):
                         return ERRO_SWEET_SCENT
             ###############################################
             
+            # Esperando para ficar mais próximo de carregar a batalha
             time.sleep(5)
             
             # Identificando cada magikarp da horda.
             print("cadastrar =", cadastrar)
             reconhecimento = ReconhecerHorda("Magikarp", listaPosicoesPokemon, cadastrar)
-            
+
             # Prosseguindo depois de aparecer o botão de Lutar
             if not CheckPixel("Lutar"):
                 return ERRO_RUN
@@ -442,62 +443,97 @@ def BotMagikarpShiny(aberto=True, cadastrar=False):
             # Se for um pokemon shiny
             elif type(reconhecimento) == int:
                 print("Pokemon shiny encontrado!")
+                print("Matando todos os não shinies...")
+                # Mata todos os não shinies da horda
                 erro = KillNonShinyHorde(reconhecimento)
                 if erro != OK:
                     return erro
+                
+                print("Usando o false swipe no shiny...")
+                # Usa false swipe no pokemon shiny até ficar com 1 de vida
                 erro = FalseSwipeHorde(reconhecimento, pp=30)                    
                 if erro != OK:
                     return erro
+                
+                # Fica lançando pokebola até capturar. Lança GreatBall 
+                # ou UltraBall se a pokebola acabar.
+                print("Capturando...")
                 confirmacao = POKEMON_NAO_CAPTURADO
                 while confirmacao == POKEMON_NAO_CAPTURADO:
-                    erro = LancarPokebola(qntdPokebolas=50)
+                    erro = LancarPokebola(qntdPokebolas=totalDePokebolas)
                     if erro != OK:
                         return erro
+                    
+                    totalDePokebolas -= 1
                     confirmacao = VerificarPokemonCapturado(manter_pokemon=True)
+                
+                print("Magikarp Shiny Capturado !!!!!! :DDDDDDDDDD")
+                print("Salvando e registrando ele.")
+                # Guardando o pokemon e registrando que um shiny foi capturado
                 Teclado(t_ESC)
                 RegisterShiny(os.path.join(FILESDIR, FOUND_SHINY_FILE))
 
+                # Zerando o número de encontros para recomeçar a contagem
+                with open(ENCONTERS_FILE, "w") as f: 
+                    f.write("0")
+
+                # Recomeçar indo pro centro pokemon, para recuperar o PP e vida.
+                time.sleep(4) # Esperando sair da batalha
+                break 
+            
             else:
                 print("Posicoes ja conhecidas.")
+                print("Usando RUN...")
                 
                 # Apertando Run.
                 Teclado(t_Right)
                 Teclado(t_Down)
                 Teclado(t_Z)
             
-            encontros += 1
-            with open(ENCONTERS_FILE, "w") as f: 
-                f.write(str(encontros))
+                encontros += 1
+                with open(ENCONTERS_FILE, "w") as f: 
+                    f.write(str(encontros))
 
-            print("Encontros:", encontros)
+                print("Encontros:", encontros)
+            
+            # Esperando voltar da batalha
             time.sleep(3)
+
         #End for
 
-        # Usando teleport
+        print("Indo para o Centro Pokemon...")
+        print("Usando teleport...")
         Teclado(t_Teleport)
         
-        # ---------------------------------------------------------------------#
+        # --------------------------------------------------------------------#
         # Faz uma última verificação se conseguiu dar run na 
         # última batalha. (Esse erro não aconteceria para o caso
         # de captura de shiny, só no caso de "Run")
 
-        ######### VERIFICA SE USOU TELEPORT ########
+        ######### VERIFICA SE USOU TELEPORT #########
         if not CheckPixel("balaoChat"):
 
             # Verifica se não conseguiu escapar da batalha anterior.
-            # Se não conseguiu, usa "Run" até tentar.
-            erro = RunUntilRunHorde()
-            if erro != USOU_RUN:
-                return erro
+            # Se não conseguiu, usa "Run" até conseguir.
+            RunUntilRunHorde()
 
-            # Usando teleport
+            print("Usando Teleport de novo...")
+
             Teclado(t_Teleport)
-        # ---------------------------------------------------------------------#
+            if not CheckPixel("balaoChat"):
+                print("Não apareceu o balão do teleport.")
+                return ERRO_TELEPORT
+        # --------------------------------------------------------------------#
+        print("Teleport usado com sucesso.")
         time.sleep(2)
+
+        print("Verificando se chegou no Centro Pokemon...")
 
         if not CheckPixel("cabeloJoyHoenn", pixel=(986, 349)):
             print ("Personagem não conseguiu utilizar o teleport.")
             return ERRO_TELEPORT
+        
+        print("Usando o CP e saindo...")
 
         erro = UsarCPESair(regiao="Hoenn")
         if erro != OK:

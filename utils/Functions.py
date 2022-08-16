@@ -52,7 +52,7 @@ POKEMON_NAO_REGISTRADO = "22 - POKEMON_NAO_REGISTRADO"
 POKEMON_SHINY = "23 - POKEMON_SHINY"
 VALOR_INVALIDO_PP = "24 - VALOR_INVALIDO_PP"
 ERRO_FALSE_SWIPE = "25 - ERRO_FALSE_SWIPE"
-ERRO_LANCAR_POKEBOLA = "26 - ERRO_LANCAR_POKEBOLA"
+ERRO_LUTAR_LANCAR_POKEBOLA = "26 - ERRO_LUTAR_LANCAR_POKEBOLA"
 SO_TEM_MASTER_BALL = "27 - SO_TEM_MASTER_BALL"
 LANCOU_BOLA_ENCONTRADA = "28 - LANCOU_BOLA_ENCONTRADA"
 POKEMON_NAO_CAPTURADO = "29 - POKEMON_NAO_CAPTURADO"
@@ -101,6 +101,7 @@ CAPTURA_CONFIRMADA = "70 - CAPTURA_CONFIRMADA"
 ERRO_RUN = "71 - ERRO_RUN"
 NAO_ESTA_NA_BATALHA = "72 - NAO_ESTA_NA_BATALHA"
 USOU_RUN = "73 - USOU_RUN"
+ERRO_FIND_POKEBOLA_TAB = "74 - ERRO_FIND_POKEBOLA_TAB"
 
 def PosicaoCidadeFly(cidade="", regiao=""):
     '''
@@ -287,25 +288,25 @@ def CheckPixel(name="", pixel=(0,0), espera=0.2, tentativas=50):
         corPadrao1 = (248, 144, 56)
         corPadrao2 = (246, 143, 56)
         corPadrao3 = (244, 142, 55)
-        pixel = (627, 714)
+        pixel = (627, 613)
     
     elif name == "GreatBall":
         corPadrao1 = (56, 143, 246)
         corPadrao2 = (55, 142, 244)
         corPadrao3 = (56, 144, 248)
-        pixel = (627, 714)
+        pixel = (627, 613)
     
     elif name == "UltraBall":   
         corPadrao1 = (111, 127, 143)
         corPadrao2 = (110, 126, 142)
         corPadrao3 = (112, 128, 144)
-        pixel = (627, 714)
+        pixel = (627, 613)
     
     elif name == "MasterBall":
         corPadrao1 = (173, 55, 236)
         corPadrao2 = (175, 56, 238)
         corPadrao3 = (176, 56, 240)
-        pixel = (627, 714)
+        pixel = (627, 613)
 
     elif name == "AbaDeIV":
         corPadrao1 = (251, 251, 251)
@@ -1202,15 +1203,15 @@ def EncontrarAbaPokebola(bola="Pokebola"):
     count = 0
     # Se não chegou na aba de pokebolas, da mochila,
     # vai pra direita até encontrar
-    while not CheckPixel(bola) and count < 4:
+    while not CheckPixel(bola, tentativas=2) and count < 3:
         Teclado(t_Right)
         count += 1
     
-    if count < 4: return OK
+    if count < 3: return OK
 
-    # cont == 4 quer dizer que foi até o final e +1 e não encontrou.
+    # cont == 3 quer dizer que foi até o final e +1 e não encontrou.
     # Começa a ir pra esquerda pra ver se encontra.
-    while not CheckPixel(bola) and count > 0:
+    while not CheckPixel(bola, tentativas=2) and count > 0:
         Teclado(t_Left)
         count -= 1
 
@@ -1231,13 +1232,13 @@ def LancarPokebola(qntdPokebolas):
 
     Returns:   
         OK
-        ERRO_LANCAR_POKEBOLA
+        ERRO_LUTAR_LANCAR_POKEBOLA
         SO_TEM_MASTER_BALL
         LANCOU_BOLA_ENCONTRADA    
     '''
     # Verifica se já apareceu o botao "Lutar", indicando que pode lançar a pokebola
     if not CheckPixel("Lutar"):
-        return ERRO_LANCAR_POKEBOLA   
+        return ERRO_LUTAR_LANCAR_POKEBOLA   
     
     # Selecionando a aba "Mochila"
     Teclado(t_Right)                
@@ -1251,9 +1252,6 @@ def LancarPokebola(qntdPokebolas):
     ########
     # Caso já tenha acabado as pokebolas.
     else: 
-        # TODO: Testar e ver se realmente as pokebolas ficam nessa ordem. 
-        #       (premier poderia ficar na frente da great?)
-        #
         # Pokebola é verificada para ver se tem pokebolas residuais (< 99)
         outras_bolas = ["Pokebola", "GreatBall", "UltraBall"]
         for bola in outras_bolas:
@@ -1262,7 +1260,7 @@ def LancarPokebola(qntdPokebolas):
 
     ################## SE ACABOU AS POKEBOLAS ENQUANTO LUTAVA ###############
 
-    if qntdPokebolas <= 0:
+    """if qntdPokebolas <= 0:
         print("As pokebolas dos packs acabaram")          
         print("Verificando se tem alguma qntd residual...")
          
@@ -1315,24 +1313,13 @@ def LancarPokebola(qntdPokebolas):
                         Teclado(t_Down)
                         if CheckPixel("MasterBall"):
                             # Só tem master ball, dar Run.
-                            return SO_TEM_MASTER_BALL
+                            return SO_TEM_MASTER_BALL"""
 
-        # Lanca a bola encontrada (pokebola, great ball, ultra ball, ou outra)
-        Teclado(t_Z)
-        
-        return LANCOU_BOLA_ENCONTRADA
-    # End if qntdPokebolas <= 0:   
-
-    if not CheckPixel("Pokebola"):
-        print("Pokebola nao estah selecionada como planejado.")
-        return ERRO_LANCAR_POKEBOLA
-    
-    # Lança a pokebola
+    # Lanca a bola encontrada (pokebola, great ball, ultra ball, ou outra)
     Teclado(t_Z)
-    
     return OK
 
-def VerificarPokemonCapturado(manter_pokemon=False, tentativas=7):
+def VerificarPokemonCapturado(manter_pokemon=False, tentativas=50):
     '''
     Verifica se o pokemon capturado tem IV31 ou não
 
@@ -2911,6 +2898,8 @@ def KillNonShinyHorde(pokemon_position):
         str: ERROR_KILL_POKEMON_HORDE
         str: OK
     """
+    # TODO: Verificar se matou o pokemon atacado.
+
     toKillList = [1, 2, 3, 4, 5]
     toKillList.remove(pokemon_position)
 
@@ -3013,21 +3002,36 @@ def RunUntilRunHorde():
         str: NAO_ESTA_NA_BATALHA
         str: OK
     '''
-    naoFugiu = CheckPixel("hordaApareceu", tentativas=2)
-    entrouWhile = False
+    # Verifica se fugiu verificando se a barra do pokemon ainda está lá
+    naoFugiu = CheckPixel("hordaApareceu", tentativas=15)
+
+    if not naoFugiu: 
+        print("Jogo não está mais na batalha. Provavelmente fugiu antes, mas demorou pra carregar.")            
+        return NAO_ESTA_NA_BATALHA
+    
     while naoFugiu:
-        entrouWhile = True
-        if not CheckPixel("Lutar"):
+        print("Não fugiu da batalha.")            
+        print('Esperando o botão "Lutar" aparecer...')            
+        
+        # Espera até o botão "Lutar" ficar disponível novamente
+        if not CheckPixel("Lutar", tentativas=100):
+            print('"Lutar" não apareceu. Pode ser erro (passou pelo teste "hordaApareceu" mas não por esse),')            
+            print('ou indicar que na verdade fugiu, conseguiu passar pelo teste "hordaApareceu"')
+            print('por isso  passou pela outra verificação')            
             return ERRO_RUN
         
+        print('Dando RUN...')            
+
         # Apertando Run.
         Teclado(t_Right)
         Teclado(t_Down)
         Teclado(t_Z)
-        
-        time.sleep(5)
-        naoFugiu = CheckPixel("hordaApareceu", tentativas=2)
+
+        time.sleep(5) # Dando um tempo para ver se vai fugir
+
+        print('Verificando se fugiu com sucesso...')            
+        # Verifica se fugiu verificando se a barra do pokemon ainda está lá
+        naoFugiu = CheckPixel("hordaApareceu", tentativas=15)
     
-    if not entrouWhile:
-        return NAO_ESTA_NA_BATALHA
+    print('Fugiu com sucesso.')            
     return USOU_RUN

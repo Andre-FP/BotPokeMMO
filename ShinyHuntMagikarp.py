@@ -5,7 +5,7 @@ import click
 
 
 @click.command()
-@click.option("--aberto", default=True, type=bool,
+@click.option("--aberto", prompt='Jogo está logado? y/n', type=str, default="y",
     help="Indica se o jogo está aberto ou não")
 @click.option("--cadastrar", default=False, type=bool,
     help="Indica se está rodando para cadastrar novas posicoes ou para encontrar o shiny")
@@ -18,6 +18,11 @@ def ShinyHuntMagikarp(aberto, cadastrar):
     OBS: Apertar Ctrl + C quando quiser parar o programa.
     '''
     
+    if aberto == "n" or aberto == "N":
+        aberto = False
+    else:
+        aberto = True
+
     print("Em 5 segundos o bot começará...")
     time.sleep(5)
     
