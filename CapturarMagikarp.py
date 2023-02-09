@@ -1,4 +1,4 @@
-from Scripts import BotCapturarMagikarp, OK
+from Scripts.CapturarMagikarp import BotCapturarMagikarp, OK
 import os 
 import time
 

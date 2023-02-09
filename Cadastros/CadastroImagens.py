@@ -1,8 +1,7 @@
 import sys
 sys.path.append('..')
-from utils.configuracoesIniciais import *
 import pyautogui
-
+import time
 
 def rectangle(coordenada):
     left = coordenada[0]
@@ -58,6 +57,7 @@ def main():
     while limite < 3:
         i = i*(-1)
         pyautogui.moveRel(i*500, 0, duration=2)
+        #pyautogui.moveRel(-i*500, 0, duration=2)
         time.sleep(5)
         new_image = CadastrarOutraImagem(images, coordenada)
         if new_image:

@@ -1,4 +1,4 @@
-from utils.Functions import *
+from functions.Functions import *
 
 
 reconhecimento = 5
@@ -20,7 +20,7 @@ while confirmacao == POKEMON_NAO_CAPTURADO:
     confirmacao = VerificarPokemonCapturado(manter_pokemon=True)
 
 Teclado(t_ESC)
-RegisterShiny(os.path.join(FILESDIR, FOUND_SHINY_FILE))
+RegisterShiny(FOUND_SHINY_FILE)
 time.sleep(3)
 Teclado(t_SweetScent)
 
@@ -34,6 +34,6 @@ while confirmacao == POKEMON_NAO_CAPTURADO:
     
     confirmacao = VerificarPokemonCapturado(manter_pokemon=True)
 Teclado(t_ESC)
-RegisterShiny(os.path.join(FILESDIR, FOUND_SHINY_FILE))
+RegisterShiny(FOUND_SHINY_FILE)
 time.sleep(3)
 Teclado(t_SweetScent)

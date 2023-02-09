@@ -2,7 +2,9 @@ import pyautogui
 import time
 import sys
 sys.path.append("..")
-from utils.Functions import *
+from functions.utils.parametros import FILESDIR
+from functions.utils.utils import StringTuplaParaTupla
+
 
 OK = 0
 FALTANDO_ARGUMENTOS = 1
@@ -114,7 +116,7 @@ def main():
     print("\n\tEsse é o programa para cadastrar cores do pixel!\n\n")
 
     print ("  Será preciso que a tela referente a cor do pixel que você deseja cadastrar,")
-    print ("esteja disponível dentre 5 segundos após iniciar o programa.\n")
+    print ("esteja disponível em 5 segundos após o programa iniciar.\n")
     
     print ("Digite as coordenadas do pixel no formato \"(x, y)\".")
     pixelString = input("\nCoordenada: ")  
@@ -146,7 +148,3 @@ def main():
     return OK
 
 main()
-
-
-
-

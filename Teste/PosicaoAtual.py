@@ -4,7 +4,7 @@ import time
 
 import sys
 sys.path.append('..')
-from utils.Functions import *
+from functions.Functions import *
 
 
 def PosicaoAtual():

@@ -1,4 +1,4 @@
-from Scripts import BotMagikarpShiny, OK
+from scripts.ShinyMagikarp import BotMagikarpShiny, OK
 import os 
 import time
 import click

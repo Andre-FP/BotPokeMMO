@@ -1,0 +1,34 @@
+POKEMMOFILE: "C:\\\"Arquivos de Programas\"\\PokeMMO\\PokeMMO.exe"
+ROOT: "."
+IMAGESDIR: "./imagens"
+
+# All files .txt must be in FILESDIR:
+FILESDIR: "./arquivos"
+FOUND_SHINY_FILE: "FoundShinyMagikarp.txt"
+HORDA_MAGIKARP_FILE: "HordaMagikarp.txt"
+ENCOUNTERS_FILE: "Encounters.txt"
+
+POSITIONS_HORDE_MOUSE: # Posição do nome de cada pokemon da horda
+  - !!python/tuple [672, 158] 
+  - !!python/tuple [672, 118]
+  - !!python/tuple [930, 118]
+  - !!python/tuple [1192, 118]
+  - !!python/tuple [1192, 155]
+TECLAS:
+  Fly: "f1"
+  Bolsa: "b"
+  Up: "w"
+  Left: "a"
+  Down: "s"
+  Right: "d"
+  Z: "z"
+  X: "x"
+  Bike: "3"
+  Regar: "4"
+  SuperRepel: "5"
+  Repel: "6"
+  Pescar: "7"
+  SweetScent: "8"
+  Teleport: "9"
+  Enter: "enter"
+  ESC: "esc"

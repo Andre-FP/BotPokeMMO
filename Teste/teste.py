@@ -1,6 +1,6 @@
 import sys
 sys.path.append("..")
-from utils.Functions import *
+from functions.Functions import *
 import time
 
 time.sleep(2)

@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 import pyautogui
 import time
-from utils.Functions import *
+from functions.Functions import *
 
 pixel = (598, 172)
 time.sleep(2)

@@ -1,4 +1,4 @@
-from Scripts import BotCultivarBerry, OK
+from Scripts.CultivarBerry import BotCultivarBerry, OK
 import os 
 import time
 

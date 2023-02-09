@@ -51,8 +51,8 @@ def main():
         return SEM_PACK_POKEBOLAS
 
     # Adquirindo os dados necessários.
-    print (f"Adquirindo dados do arquivo {FILESDIR}HordaMagikarp.txt...")
-    listaPosicoesPokemon = AdquirirDadosHorda(FILESDIR + "HordaMagikarp")
+    print (f"Adquirindo dados do arquivo {HORDA_MAGIKARP_FILE}...")
+    listaPosicoesPokemon = AdquirirDadosHorda(HORDA_MAGIKARP_FILE)
     if listaPosicoesPokemon == ERRO_CRIANDO_ARQUIVO or listaPosicoesPokemon == TUPLA_INVALIDA:
         print ("Erro Adquirindo dados de horda de magikarp")
         return listaPosicoesPokemon
@@ -100,7 +100,7 @@ def main():
                 return erro
             confirmacao = VerificarPokemonCapturado(manter_pokemon=True)
         ClickTecladoVirtual(t_ESC)
-        RegisterShiny(FILESDIR + "FoundShinyMagikarp.txt")
+        RegisterShiny(FOUND_SHINY_FILE)
 
     return OK
     
