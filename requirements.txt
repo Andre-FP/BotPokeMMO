@@ -1,2 +1,4 @@
 keyboard
 pyautogui
+pyyaml
+click
