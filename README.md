@@ -23,4 +23,4 @@ The two firsts functions were made for Magikarp, but the system is generalizable
 * Develop function for EV trainning on the selected spot (If it appears a shiny, capture it)
 
 ### New function: Levelling up grinding
-* Develop function for grinding XP on the selected spot.
+* Develop function for grinding XP on the selected spot (If it appears a shiny, capture it).
