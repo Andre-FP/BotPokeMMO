@@ -7,7 +7,7 @@ A bot made in python to play PokeMMO game to automatize repetitive tasks like sh
 2. Pokemon capture for perfect IV (Magikarp)
 3. Berry planting, watering, and harvesting.
 
-All these functions were made for Magikarp, but the system is generalizable for any pokemon, it only needs the target pokemon registration in the system, and the character path programming to the spot area that the pokemon is related.
+The two firsts functions were made for Magikarp, but the system is generalizable for any pokemon, it only needs the target pokemon registration in the system, and the character path programming to the spot area that the pokemon is related.
 
 ## Next Steps:
 
